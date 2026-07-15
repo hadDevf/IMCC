@@ -1,9 +1,7 @@
 // api/_lib/firebase.js
 import admin from 'firebase-admin';
 
-// Inisialisasi sekali aja
 if (!admin.apps.length) {
-  // Ambil dari environment variables Vercel
   const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
 
   admin.initializeApp({
@@ -13,7 +11,13 @@ if (!admin.apps.length) {
 }
 
 const db = admin.database();
+const IMAGE_API_KEY = process.env.IMAGE_API_KEY;
+const IMAGE_API_URL = process.env.IMAGE_API_URL;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 
 export {
-  db
+  db,
+  IMAGE_API_KEY,
+  IMAGE_API_URL,
+  ADMIN_PASSWORD
 };
