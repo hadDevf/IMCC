@@ -214,23 +214,28 @@
     </div>
 
     <!-- Token Login Modal -->
-        <div id="tokenModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
-        <div class="glass-panel max-w-sm w-full p-6 rounded-2xl border border-white/10 shadow-2xl space-y-4">
-            <div class="text-center">
-                <i class="fa-solid fa-lock text-diamond text-4xl mb-2"></i>
-                <h3 class="text-lg font-bold text-white">Akses Admin Panel</h3>
-                <p class="text-xs text-gray-400 mt-2">Masukkan token autentikasi untuk melanjutkan ke panel admin.</p>
-            </div>
-            <div class="space-y-3">
-                <input type="password" id="tokenInput" placeholder="Masukkan token..." class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-diamond">
-                <p id="tokenError" class="text-xs text-red-400 hidden">Token salah. Silakan coba lagi.</p>
-            </div>
-            <div class="flex gap-3 pt-2">
-                <button id="tokenSubmitBtn" class="flex-1 py-2.5 bg-diamond hover:bg-diamond-hover text-black font-bold rounded-xl text-xs transition-colors">Verifikasi</button>
-                <button id="tokenCancelBtn" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold rounded-xl text-xs transition-colors border border-white/5">Batal</button>
-            </div>
+<!-- Token Login Modal - MODIFIED -->
+<div id="tokenModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-panel max-w-sm w-full p-6 rounded-2xl border border-white/10 shadow-2xl space-y-4">
+        <div class="text-center">
+            <i class="fa-solid fa-lock text-diamond text-4xl mb-2"></i>
+            <h3 class="text-lg font-bold text-white">Akses Admin Panel</h3>
+            <p class="text-xs text-gray-400 mt-2">Masukkan token autentikasi untuk melanjutkan ke panel admin.</p>
+        </div>
+        <div class="space-y-3">
+            <input type="password" id="tokenInput" placeholder="Masukkan token..." class="w-full bg-mineDark-900 border border-white/10 rounded-xl px-4 py-2.5 text-xs text-gray-200 focus:outline-none focus:border-diamond">
+            <p id="tokenError" class="text-xs text-red-400 hidden">Token salah. Silakan coba lagi.</p>
+        </div>
+        <div class="flex gap-3 pt-2">
+            <button id="tokenSubmitBtn" class="flex-1 py-2.5 bg-diamond hover:bg-diamond-hover text-black font-bold rounded-xl text-xs transition-colors">
+                Verifikasi
+            </button>
+            <button id="tokenCancelBtn" class="flex-1 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 font-bold rounded-xl text-xs transition-colors border border-white/5">
+                Batal
+            </button>
         </div>
     </div>
+</div>
 
     <!-- Image Upload Modal -->
     <div id="uploadModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
@@ -825,6 +830,6 @@
     </footer>
 
     <!-- Firebase SDK -->
-    <script type="module" src="app.js"></script>
+    <script type="module" src="sc.js"></script>
 </body>
 </html>
