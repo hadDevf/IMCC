@@ -9,14 +9,14 @@ import { getDatabase, ref, set, push, onValue, remove, update, get } from "https
 
 // Firebase Configuration (User's Project)
 const firebaseConfig = {
-    apiKey: "AIzaSyBtez3wEJtbrMjILJOXYYyB7yDlls5ZoJI",
-    authDomain: "imcc-2a157.firebaseapp.com",
-    databaseURL: "https://imcc-2a157-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "imcc-2a157",
-    storageBucket: "imcc-2a157.firebasestorage.app",
-    messagingSenderId: "19282805089",
-    appId: "1:19282805089:web:bbfea08d6fcb9317748520",
-    measurementId: "G-623YHMXQKR"
+    apiKey: "AIzaSyA664h9FSUnfSe4ew4deWY1xuEkRWflIdA",
+    authDomain:"imcc-id.firebaseapp.com",
+    databaseURL: "https://imcc-id-default-rtdb.asia-southeast1.firebasedatabase.app/",
+    projectId: "imcc-id",
+    storageBucket: "imcc-id.firebasestorage.app",
+    messagingSenderId: "423499716760",
+    appId: "1:423499716760:web:8a7326674e316451e958ed",
+    measurementId: "G-SRSM3Q1GE1"
 };
 
 // Image Upload Configuration
