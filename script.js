@@ -4,16 +4,444 @@
 
 // Konfigurasi URL API Vercel (relative path)
 const VERIFY_API_URL = '/api/admin/verify';
-const CREATORS_API_URL = '/api/creators';
+const CREATORS_API_URL = '/api/creators/';
 const REGISTRATIONS_API_URL = '/api/registrations';
 const UPLOAD_API_URL = '/api/upload';
 const ADMIN_REGISTRATIONS_API_URL = '/api/admin/registrations';
+const CONFIG_API_URL = '/api/config';
 
 // ============================================
-// SOCIAL MEDIA CONFIGURATION (KONFIGURASI IKON)
+// GLOBAL STATE
 // ============================================
 
-// Konfigurasi standar untuk semua platform sosial media
+let firebaseConfig = null;
+let IMAGE_API_URL = null;
+let app, auth, db;
+let currentUserUID = null;
+let isAdmin = false;
+let targetInputId = null;
+let creatorsList = [];
+let registrationsList = [];
+
+// ============================================
+// LOAD CONFIG FROM SERVER
+// ============================================
+
+async function loadConfig() {
+  try {
+    const response = await fetch(CONFIG_API_URL);
+    const config = await response.json();
+
+    firebaseConfig = {
+      apiKey: config.apiKey,
+      authDomain: config.authDomain,
+      databaseURL: config.databaseURL,
+      projectId: config.projectId,
+      storageBucket: config.storageBucket,
+      messagingSenderId: config.messagingSenderId,
+      appId: config.appId,
+      measurementId: config.measurementId
+    };
+
+    IMAGE_API_URL = config.imageApiUrl;
+
+    // Initialize Firebase setelah dapet config
+    initializeFirebase();
+
+  } catch (error) {
+    console.error('Gagal load config:', error);
+    alertNotification('error', 'Gagal memuat konfigurasi');
+  }
+}
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+async function initializeFirebase() {
+  // Import Firebase SDK
+  const {
+    initializeApp
+  } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js");
+  const {
+    getAuth,
+    signInAnonymously
+  } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js");
+  const {
+    getDatabase,
+    ref,
+    set,
+    push,
+    onValue,
+    remove,
+    update,
+    get
+  } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+
+  // Initialize Firebase dengan config dari server
+  app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getDatabase(app);
+
+  // Sign in anonymously to enable secure DB writes
+  signInAnonymously(auth)
+  .then((userCredential) => {
+    currentUserUID = userCredential.user.uid;
+    console.log("✅ Terhubung ke Firebase secara Anonim. UID:", currentUserUID);
+
+    initializeAdminStructure().then(() => {
+      checkAdminStatus();
+    });
+
+    const storedAdminStatus = sessionStorage.getItem('isAdmin');
+    if (storedAdminStatus === 'true') {
+      showAdminUI();
+    }
+  })
+  .catch((err) => {
+    console.warn("Firebase Auth Error: Mengakses Database tanpa auth...", err);
+    initializeAdminStructure();
+  });
+
+  // Setup realtime listeners
+  setupRealtimeListeners();
+}
+
+// ============================================
+// REALTIME LISTENERS
+// ============================================
+
+function setupRealtimeListeners() {
+  if (!db) return;
+
+  const {
+    ref,
+    onValue
+  } = require? No,
+  pake global.
+  // Kita pake cara manual karena import dinamis
+  setTimeout(() => {
+    setupListeners();
+  }, 1000);
+}
+
+async function setupListeners() {
+  const {
+    ref,
+    onValue
+  } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+
+  onValue(ref(db, 'creators'), (snapshot) => {
+    const data = snapshot.val();
+    creatorsList = [];
+    if (data) {
+      for (let key in data) {
+        creatorsList.push({
+          firebaseKey: key,
+          ...data[key]
+        });
+      }
+    }
+    renderCreators();
+    renderAdminCreators();
+    updateStatsCounter();
+  });
+
+  onValue(ref(db, 'registrations'),
+    (snapshot) => {
+      const data = snapshot.val();
+      registrationsList = [];
+      if (data) {
+        for (let key in data) {
+          registrationsList.push({
+            firebaseKey: key,
+            ...data[key]
+          });
+        }
+      }
+      renderAdminRegistrations();
+    });
+
+  if (currentUserUID) {
+    onValue(ref(db, `admins/${currentUserUID}`), (snapshot) => {
+      if (snapshot.exists() && snapshot.val() === true) {
+        showAdminUI();
+      } else {
+        hideAdminUI();
+      }
+      updateActivePage();
+    });
+  }
+}
+
+// ============================================
+// ADMIN ROLE MANAGEMENT
+// ============================================
+
+async function initializeAdminStructure() {
+  if (!db) return;
+  const {
+    ref,
+    get
+  } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+  const adminsRef = ref(db, 'admins');
+  const snapshot = await get(adminsRef);
+  if (!snapshot.exists()) {
+    console.log('ℹ️  Struktur admin belum ada. Silakan tambahkan UID user di path /admins/{uid} dengan value true via Firebase Console.');
+    console.log('📝 Contoh: /admins/abc123xyz = true');
+  }
+}
+
+async function checkAdminStatus() {
+  if (!currentUserUID || !db) return false;
+  const {
+    ref,
+    get
+  } = await import("https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js");
+  try {
+    const adminRef = ref(db, `admins/${currentUserUID}`);
+    const snapshot = await get(adminRef);
+    const hasAdminAccess = snapshot.exists() && snapshot.val() === true;
+    if (hasAdminAccess) {
+      console.log('✅ User adalah admin!');
+      showAdminUI();
+    } else {
+      console.log('ℹ️  User bukan admin.');
+    }
+    return hasAdminAccess;
+  } catch (error) {
+    console.error('Gagal mengecek status admin:', error);
+    return false;
+  }
+}
+
+function showAdminUI() {
+  isAdmin = true;
+  document.querySelectorAll('.admin-only').forEach(el => {
+    if (el.tagName === 'A' && el.classList.contains('nav-pill')) {
+      el.classList.add('visible');
+    } else if (el.tagName === 'A' && el.classList.contains('mobile-nav-pill')) {
+      el.classList.add('visible');
+    } else if (el.tagName === 'LI') {
+      el.style.display = 'list-item';
+    } else {
+      el.style.display = 'flex';
+    }
+  });
+  sessionStorage.setItem('isAdmin',
+    'true');
+}
+
+function hideAdminUI() {
+  isAdmin = false;
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = 'none';
+    el.classList.remove('visible', 'inline-visible');
+  });
+  sessionStorage.setItem('isAdmin',
+    'false');
+}
+
+// ============================================
+// VERIFY ADMIN PASSWORD
+// ============================================
+
+async function verifyAdminPassword(password) {
+  try {
+    const response = await fetch(VERIFY_API_URL,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password
+        }),
+      });
+    const data = await response.json();
+    if (response.ok && data.success) {
+      return {
+        success: true,
+        data
+      };
+    } else {
+      return {
+        success: false,
+        error: data.error || 'Verifikasi gagal'
+      };
+    }
+  } catch (error) {
+    console.error('Error verifying admin:', error);
+    return {
+      success: false,
+      error: 'Gagal terhubung ke server'
+    };
+  }
+}
+
+function showTokenModal() {
+  const modal = document.getElementById('tokenModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('tokenError').classList.add('hidden');
+  document.getElementById('tokenInput').focus();
+}
+
+function hideTokenModal() {
+  const modal = document.getElementById('tokenModal');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+}
+
+async function handleTokenSubmit() {
+  const tokenInput = document.getElementById('tokenInput');
+  const tokenError = document.getElementById('tokenError');
+  const enteredToken = tokenInput.value.trim();
+  const submitBtn = document.getElementById('tokenSubmitBtn');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memverifikasi...';
+  submitBtn.disabled = true;
+
+  try {
+    const result = await verifyAdminPassword(enteredToken);
+    if (result.success) {
+      showAdminUI();
+      hideTokenModal();
+      alertNotification('success', '✅ Token valid! Anda sekarang memiliki akses admin.');
+      window.location.hash = 'admin';
+    } else {
+      tokenError.classList.remove('hidden');
+      tokenError.textContent = result.error || 'Token salah. Silakan coba lagi.';
+      tokenInput.value = '';
+      tokenInput.focus();
+    }
+  } catch (error) {
+    tokenError.classList.remove('hidden');
+    tokenError.textContent = 'Terjadi kesalahan, coba lagi nanti.';
+  } finally {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  }
+}
+
+async function handleAdminNavigation(targetHash) {
+  if (targetHash === 'admin') {
+    if (isAdmin) {
+      return true;
+    } else {
+      showTokenModal();
+      return false;
+    }
+  }
+  return true;
+}
+
+// ============================================
+// UPLOAD MODAL FUNCTIONS
+// ============================================
+
+window.openUploadModal = function(inputId) {
+  targetInputId = inputId;
+  const modal = document.getElementById('uploadModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('uploadProgressContainer').classList.add('hidden');
+  document.getElementById('uploadResult').classList.add('hidden');
+  document.getElementById('uploadPreview').classList.add('hidden');
+  document.getElementById('uploadPlaceholder').classList.remove('hidden');
+  document.getElementById('fileInput').value = '';
+};
+
+window.closeUploadModal = function() {
+  const modal = document.getElementById('uploadModal');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+  targetInputId = null;
+};
+
+window.handleFileSelect = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('uploadPreview');
+    const placeholder = document.getElementById('uploadPlaceholder');
+    preview.src = e.target.result;
+    preview.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+  uploadImage(file);
+};
+
+async function uploadImage(file) {
+  const progressContainer = document.getElementById('uploadProgressContainer');
+  const progressBar = document.getElementById('uploadProgressBar');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const uploadResult = document.getElementById('uploadResult');
+  const uploadedUrl = document.getElementById('uploadedUrl');
+
+  progressContainer.classList.remove('hidden');
+  uploadResult.classList.add('hidden');
+
+  let progress = 0;
+  const progressInterval = setInterval(() => {
+    if (progress < 90) {
+      progress += Math.random() * 15;
+      if (progress > 90) progress = 90;
+      progressBar.style.width = progress + '%';
+    }
+  },
+    200);
+
+  uploadStatus.textContent = 'Mengupload...';
+
+  try {
+    const formData = new FormData();
+    formData.append('file',
+      file);
+
+    const response = await fetch(UPLOAD_API_URL,
+      {
+        method: 'POST',
+        body: formData
+      });
+
+    clearInterval(progressInterval);
+    progressBar.style.width = '100%';
+
+    const result = await response.json();
+
+    if (result.success && result.url) {
+      uploadedUrl.value = result.url;
+      uploadStatus.textContent = 'Upload berhasil!';
+      uploadResult.classList.remove('hidden');
+      progressContainer.classList.add('hidden');
+      alertNotification('success', 'Foto berhasil diupload! URL siap digunakan.');
+    } else {
+      throw new Error(result.error || 'Upload gagal');
+    }
+  } catch (error) {
+    clearInterval(progressInterval);
+    progressBar.style.width = '0%';
+    uploadStatus.textContent = 'Gagal: ' + error.message;
+    progressContainer.classList.add('hidden');
+    alertNotification('error', 'Gagal mengupload foto: ' + error.message);
+  }
+}
+
+window.copyUploadedUrl = function() {
+  const uploadedUrl = document.getElementById('uploadedUrl');
+  uploadedUrl.select();
+  document.execCommand('copy');
+  alertNotification('success', 'URL berhasil disalin ke clipboard!');
+};
+
+// ============================================
+// SOCIAL MEDIA CONFIGURATION
+// ============================================
+
 const SOCIAL_PLATFORMS = [{
   key: 'youtube',
   iconClass: 'fa-brands fa-youtube',
@@ -88,306 +516,9 @@ const SOCIAL_PLATFORMS = [{
     textColor: 'text-blue-500'
   }];
 
-// ============================================
-// GLOBAL STATE
-// ============================================
-
-let isAdmin = false;
-let targetInputId = null;
-let creatorsList = [];
-let registrationsList = [];
-let adminPassword = '';
-
-// ============================================
-// INITIALIZATION
-// ============================================
-
-// Check session storage for admin status
-const storedAdminStatus = sessionStorage.getItem('isAdmin');
-if (storedAdminStatus === 'true') {
-  isAdmin = true;
-  showAdminUI();
-}
-
-// Fetch data from Vercel API
-fetchCreators();
-fetchRegistrations();
-
-// ============================================
-// ADMIN ROLE MANAGEMENT
-// ============================================
-
-/**
-* Show admin UI elements
-*/
-function showAdminUI() {
-  isAdmin = true;
-
-  document.querySelectorAll('.admin-only').forEach(el => {
-    if (el.tagName === 'A' && el.classList.contains('nav-pill')) {
-      el.classList.add('visible');
-    } else if (el.tagName === 'A' && el.classList.contains('mobile-nav-pill')) {
-      el.classList.add('visible');
-    } else if (el.tagName === 'LI') {
-      el.style.display = 'list-item';
-    } else {
-      el.style.display = 'flex';
-    }
-  });
-
-  sessionStorage.setItem('isAdmin',
-    'true');
-}
-
-/**
-* Hide admin UI elements
-*/
-function hideAdminUI() {
-  isAdmin = false;
-
-  document.querySelectorAll('.admin-only').forEach(el => {
-    el.style.display = 'none';
-    el.classList.remove('visible', 'inline-visible');
-  });
-
-  sessionStorage.setItem('isAdmin',
-    'false');
-}
-
-// ============================================
-// API CALLS KE VERCEL BACKEND
-// ============================================
-
-/**
-* Fetch all creators from Vercel API
-*/
-async function fetchCreators() {
-  try {
-    const response = await fetch(CREATORS_API_URL);
-    const data = await response.json();
-    creatorsList = data;
-    renderCreators();
-    renderAdminCreators();
-    updateStatsCounter();
-  } catch (error) {
-    console.error('Gagal fetch creators:',
-      error);
-    alertNotification('error',
-      'Gagal mengambil data creator');
-  }
-}
-
-/**
-* Fetch all registrations from Vercel API (admin only)
-*/
-async function fetchRegistrations() {
-  try {
-    const response = await fetch(`${REGISTRATIONS_API_URL}?password=${adminPassword}`);
-    const data = await response.json();
-    registrationsList = data;
-    renderAdminRegistrations();
-  } catch (error) {
-    console.error('Gagal fetch registrations:',
-      error);
-  }
-}
-
-/**
-* Verifikasi password admin via Vercel API
-*/
-async function verifyAdminPassword(password) {
-  try {
-    const response = await fetch(VERIFY_API_URL,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          password
-        }),
-      });
-
-    const data = await response.json();
-
-    if (response.ok && data.success) {
-      adminPassword = password;
-      return {
-        success: true,
-        data
-      };
-    } else {
-      return {
-        success: false,
-        error: data.error || 'Verifikasi gagal'
-      };
-    }
-  } catch (error) {
-    console.error('Error verifying admin:', error);
-    return {
-      success: false,
-      error: 'Gagal terhubung ke server'
-    };
-  }
-}
-
-/**
-* Submit registration via Vercel API
-*/
-async function submitRegistration(formData) {
-  try {
-    const response = await fetch(REGISTRATIONS_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(formData),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error submitting registration:', error);
-    return {
-      success: false,
-      error: 'Gagal mendaftar'
-    };
-  }
-}
-
-/**
-* Upload image via Vercel API (API key tersembunyi di server)
-* FIXED: Renamed from uploadImage to uploadImageToServer to avoid conflict
-*/
-async function uploadImageToServer(file) {
-  const formData = new FormData();
-  formData.append('file', file);
-
-  try {
-    const response = await fetch(UPLOAD_API_URL, {
-      method: 'POST',
-      body: formData,
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error uploading image:', error);
-    return {
-      success: false,
-      error: 'Gagal upload gambar'
-    };
-  }
-}
-
-/**
-* Admin approve registration via Vercel API
-*/
-async function adminApproveRegistration(id, approve) {
-  try {
-    const response = await fetch(`${ADMIN_REGISTRATIONS_API_URL}/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        adminPassword,
-        isApproved: approve
-      }),
-    });
-    return await response.json();
-  } catch (error) {
-    console.error('Error approving registration:', error);
-    return {
-      success: false,
-      error: 'Gagal memproses'
-    };
-  }
-}
-
-// ============================================
-// TOKEN AUTHENTICATION SYSTEM - VERCEL API
-// ============================================
-
-/**
-* Show token login modal
-*/
-function showTokenModal() {
-  const modal = document.getElementById('tokenModal');
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-  document.getElementById('tokenInput').value = '';
-  document.getElementById('tokenError').classList.add('hidden');
-  document.getElementById('tokenInput').focus();
-}
-
-/**
-* Hide token login modal
-*/
-function hideTokenModal() {
-  const modal = document.getElementById('tokenModal');
-  modal.classList.remove('flex');
-  modal.classList.add('hidden');
-}
-
-/**
-* Handle token submission - Menggunakan Vercel API
-*/
-async function handleTokenSubmit() {
-  const tokenInput = document.getElementById('tokenInput');
-  const tokenError = document.getElementById('tokenError');
-  const enteredToken = tokenInput.value.trim();
-
-  const submitBtn = document.getElementById('tokenSubmitBtn');
-  const originalText = submitBtn.innerHTML;
-  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memverifikasi...';
-  submitBtn.disabled = true;
-
-  try {
-    const result = await verifyAdminPassword(enteredToken);
-
-    if (result.success) {
-      showAdminUI();
-      hideTokenModal();
-      alertNotification('success', '✅ Token valid! Anda sekarang memiliki akses admin.');
-      window.location.hash = 'admin';
-      // Refresh data registrations setelah login admin
-      fetchRegistrations();
-    } else {
-      tokenError.classList.remove('hidden');
-      tokenError.textContent = result.error || 'Token salah. Silakan coba lagi.';
-      tokenInput.value = '';
-      tokenInput.focus();
-    }
-  } catch (error) {
-    tokenError.classList.remove('hidden');
-    tokenError.textContent = 'Terjadi kesalahan, coba lagi nanti.';
-  } finally {
-    submitBtn.innerHTML = originalText;
-    submitBtn.disabled = false;
-  }
-}
-
-/**
-* Handle admin navigation with token check via Vercel API
-*/
-async function handleAdminNavigation(targetHash) {
-  if (targetHash === 'admin') {
-    if (isAdmin) {
-      return true;
-    } else {
-      showTokenModal();
-      return false;
-    }
-  }
-  return true;
-}
-
-// ============================================
-// HELPER FUNCTION: Membangun HTML Sosial Media
-// ============================================
-
 function buildSocialIconsHTML(socials) {
   if (!socials) return '<span class="text-[10px] text-gray-600 italic">Tidak ada tautan sosial</span>';
-
   let html = '';
-
   SOCIAL_PLATFORMS.forEach(platform => {
     if (socials[platform.key]) {
       html += `
@@ -399,121 +530,19 @@ function buildSocialIconsHTML(socials) {
       </a>`;
     }
   });
-
   return html || '<span class="text-[10px] text-gray-600 italic">Tidak ada tautan sosial</span>';
 }
 
 function buildAdminSocialIconsHTML(socials) {
   if (!socials) return '<span class="text-gray-600">None</span>';
-
   let html = '';
-
   SOCIAL_PLATFORMS.forEach(platform => {
     if (socials[platform.key]) {
       html += `<i class="${platform.iconClass} ${platform.textColor}" title="${platform.label}"></i> `;
     }
   });
-
   return html.trim() || '<span class="text-gray-600">None</span>';
 }
-
-// ============================================
-// UPLOAD MODAL FUNCTIONS
-// ============================================
-
-window.openUploadModal = function(inputId) {
-  targetInputId = inputId;
-  const modal = document.getElementById('uploadModal');
-  modal.classList.remove('hidden');
-  modal.classList.add('flex');
-
-  document.getElementById('uploadProgressContainer').classList.add('hidden');
-  document.getElementById('uploadResult').classList.add('hidden');
-  document.getElementById('uploadPreview').classList.add('hidden');
-  document.getElementById('uploadPlaceholder').classList.remove('hidden');
-  document.getElementById('fileInput').value = '';
-};
-
-window.closeUploadModal = function() {
-  const modal = document.getElementById('uploadModal');
-  modal.classList.remove('flex');
-  modal.classList.add('hidden');
-  targetInputId = null;
-};
-
-window.handleFileSelect = function(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const preview = document.getElementById('uploadPreview');
-    const placeholder = document.getElementById('uploadPlaceholder');
-    preview.src = e.target.result;
-    preview.classList.remove('hidden');
-    placeholder.classList.add('hidden');
-  };
-  reader.readAsDataURL(file);
-
-  uploadImage(file);
-};
-
-/**
-* Upload image function - FIXED: Now calls uploadImageToServer
-*/
-async function uploadImage(file) {
-  const progressContainer = document.getElementById('uploadProgressContainer');
-  const progressBar = document.getElementById('uploadProgressBar');
-  const uploadStatus = document.getElementById('uploadStatus');
-  const uploadResult = document.getElementById('uploadResult');
-  const uploadedUrl = document.getElementById('uploadedUrl');
-
-  progressContainer.classList.remove('hidden');
-  uploadResult.classList.add('hidden');
-
-  let progress = 0;
-  const progressInterval = setInterval(() => {
-    if (progress < 90) {
-      progress += Math.random() * 15;
-      if (progress > 90) progress = 90;
-      progressBar.style.width = progress + '%';
-    }
-  },
-    200);
-
-  uploadStatus.textContent = 'Mengupload...';
-
-  try {
-    // FIXED: Use uploadImageToServer instead of uploadImage (avoid recursion)
-    const result = await uploadImageToServer(file);
-
-    clearInterval(progressInterval);
-    progressBar.style.width = '100%';
-
-    if (result.success && result.url) {
-      uploadedUrl.value = result.url;
-      uploadStatus.textContent = 'Upload berhasil!';
-      uploadResult.classList.remove('hidden');
-      progressContainer.classList.add('hidden');
-      alertNotification('success', 'Foto berhasil diupload! URL siap digunakan.');
-    } else {
-      throw new Error(result.error || 'Upload gagal');
-    }
-  } catch (error) {
-    clearInterval(progressInterval);
-    progressBar.style.width = '0%';
-    uploadStatus.textContent = 'Gagal: ' + error.message;
-    progressContainer.classList.add('hidden');
-    alertNotification('error', 'Gagal mengupload foto: ' + error.message);
-  }
-}
-
-window.copyUploadedUrl = function() {
-  const uploadedUrl = document.getElementById('uploadedUrl');
-  uploadedUrl.select();
-  document.execCommand('copy');
-  alertNotification('success', 'URL berhasil disalin ke clipboard!');
-};
 
 // ============================================
 // UI RENDER FUNCTIONS
@@ -533,9 +562,7 @@ function updateStatsCounter() {
 function renderCreators() {
   const grid = document.getElementById('creatorsGrid');
   if (!grid) return;
-
   grid.innerHTML = '';
-
   if (creatorsList.length === 0) {
     grid.innerHTML = `
     <div class="col-span-full text-center py-20 bg-white/[0.01] border border-dashed border-white/10 rounded-3xl">
@@ -546,11 +573,9 @@ function renderCreators() {
     `;
     return;
   }
-
   creatorsList.forEach(creator => {
     const socialsHTML = buildSocialIconsHTML(creator.socials);
     const avatarImg = creator.avatar || 'https://placehold.co/120x120/141923/ffffff?text=' + creator.name.substring(0, 2).toUpperCase();
-
     const cardHTML = `
     <div class="creator-card glass-panel rounded-3xl overflow-hidden border border-white/5 transition-all duration-300 select-none" data-name="${creator.name}">
     <div class="h-28 w-full relative">
@@ -579,16 +604,13 @@ function renderCreators() {
     `;
     grid.insertAdjacentHTML('beforeend', cardHTML);
   });
-
   filterCreators();
 }
 
 function renderAdminRegistrations() {
   const list = document.getElementById('pendingRegistrationsList');
   if (!list) return;
-
   list.innerHTML = '';
-
   if (registrationsList.length === 0) {
     list.innerHTML = `
     <div class="text-center py-12 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
@@ -599,7 +621,6 @@ function renderAdminRegistrations() {
     `;
     return;
   }
-
   registrationsList.forEach((reg, index) => {
     const avatarIcon = reg.avatarUrl ?
     `<img src="${reg.avatarUrl}" class="w-8 h-8 rounded-full object-cover border border-white/20 mr-2" />`:
@@ -641,9 +662,7 @@ function renderAdminRegistrations() {
 function renderAdminCreators() {
   const tableBody = document.getElementById('adminCreatorsTableBody');
   if (!tableBody) return;
-
   tableBody.innerHTML = '';
-
   if (creatorsList.length === 0) {
     tableBody.innerHTML = `
     <tr>
@@ -652,11 +671,9 @@ function renderAdminCreators() {
     `;
     return;
   }
-
   creatorsList.forEach(creator => {
     const avatarImg = creator.avatar || 'https://placehold.co/120x120/141923/ffffff?text=' + creator.name.substring(0, 2).toUpperCase();
     const platformsHTML = buildAdminSocialIconsHTML(creator.socials);
-
     const rowHTML = `
     <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
     <td class="py-3 pl-2 flex items-center gap-3">
@@ -694,43 +711,32 @@ function renderAdminCreators() {
 // DATA MUTATION FUNCTIONS
 // ============================================
 
-async function deleteCreator(firebaseKey) {
+function deleteCreator(firebaseKey) {
   const creator = creatorsList.find(c => c.firebaseKey === firebaseKey);
   if (!creator) return;
-
-  if (!confirm(`Yakin mau hapus "${creator.name}"?`)) return;
-
-  try {
-    const response = await fetch(`/api/creators/${firebaseKey}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        adminPassword
-      })
+  const {
+    ref,
+    remove
+  } = require? Pake cara manual.
+  // Kita pake fungsi global dari Firebase
+  if (typeof remove !== 'undefined') {
+    remove(ref(db, 'creators/' + firebaseKey))
+    .then(() => {
+      alertNotification('error', `Creator "${creator.name}" telah dihapus secara live.`);
+    })
+    .catch((err) => {
+      alertNotification('error', `Gagal menghapus creator: ${err.message}`);
     });
-
-    if (response.ok) {
-      alertNotification('error', `Creator "${creator.name}" telah dihapus.`);
-      fetchCreators();
-    } else {
-      throw new Error('Gagal menghapus');
-    }
-  } catch (error) {
-    alertNotification('error', 'Gagal menghapus creator');
   }
 }
 
 function openEditModal(firebaseKey) {
   const creator = creatorsList.find(c => c.firebaseKey === firebaseKey);
   if (!creator) return;
-
   document.getElementById('editKey').value = firebaseKey;
   document.getElementById('editName').value = creator.name || '';
   document.getElementById('editAvatar').value = creator.avatar || '';
   document.getElementById('editBio').value = creator.bio || '';
-
   const socials = creator.socials || {};
   document.getElementById('editYoutube').value = socials.youtube || '';
   document.getElementById('editTiktok').value = socials.tiktok || '';
@@ -741,7 +747,6 @@ function openEditModal(firebaseKey) {
   document.getElementById('editWhatsapp').value = socials.whatsapp || '';
   document.getElementById('editDonate').value = socials.donate || '';
   document.getElementById('editFacebook').value = socials.facebook || '';
-
   const modal = document.getElementById('editModal');
   modal.classList.remove('hidden');
   modal.classList.add('flex');
@@ -754,11 +759,10 @@ function closeEditModal() {
   document.getElementById('editCreatorForm').reset();
 }
 
-async function handleEditCreatorSubmit(event) {
+function handleEditCreatorSubmit(event) {
   event.preventDefault();
   const firebaseKey = document.getElementById('editKey').value;
   if (!firebaseKey) return;
-
   const updatedData = {
     name: document.getElementById('editName').value.trim(),
     avatar: document.getElementById('editAvatar').value.trim() ||
@@ -776,38 +780,30 @@ async function handleEditCreatorSubmit(event) {
       facebook: document.getElementById('editFacebook').value.trim()
     }
   };
-
-  try {
-    const response = await fetch(`/api/creators/${firebaseKey}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...updatedData, adminPassword
-      })
-    });
-
-    if (response.ok) {
-      alertNotification('success', `Profil "${updatedData.name}" berhasil diperbarui.`);
+  const {
+    ref,
+    update
+  } = require? Pake cara manual.
+  if (typeof update !== 'undefined') {
+    update(ref(db, 'creators/' + firebaseKey), updatedData)
+    .then(() => {
+      alertNotification('success', `Profil "${updatedData.name}" berhasil diperbarui secara live.`);
       closeEditModal();
-      fetchCreators();
-    } else {
-      throw new Error('Gagal memperbarui');
-    }
-  } catch (error) {
-    alertNotification('error', 'Gagal memperbarui profil');
+    })
+    .catch((err) => {
+      alertNotification('error', `Gagal memperbarui profil: ${err.message}`);
+    });
   }
 }
 
-async function handleFormSubmit(event) {
+function handleFormSubmit(event) {
   event.preventDefault();
   const fullName = document.getElementById('fullName').value.trim();
   const phoneNumber = document.getElementById('phoneNumber').value.trim();
   const avatarUrl = document.getElementById('avatarUrl').value.trim();
   const optionalDetails = document.getElementById('optionalDetails').value.trim();
-
-  const formData = {
+  const newRegistration = {
+    id: "reg_" + Date.now(),
     name: fullName,
     phone: phoneNumber,
     role: "creator",
@@ -825,28 +821,32 @@ async function handleFormSubmit(event) {
     },
     details: optionalDetails
   };
-
-  const result = await submitRegistration(formData);
-
-  if (result.success) {
-    alertNotification('success', result.message);
-    document.getElementById('imccJoinForm').reset();
-  } else {
-    alertNotification('error', result.error || 'Gagal mendaftar');
+  const {
+    ref,
+    push
+  } = require? Pake cara manual.
+  if (typeof push !== 'undefined') {
+    push(ref(db, 'registrations'), newRegistration)
+    .then(() => {
+      alertNotification('success', `Terima kasih ${fullName}! Pendaftaran Anda berhasil dikirim secara realtime.`);
+      document.getElementById('imccJoinForm').reset();
+    })
+    .catch((err) => {
+      alertNotification('error', `Gagal mengirim pendaftaran: ${err.message}`);
+    });
   }
 }
 
-async function handleDirectCreatorUpload(event) {
+function handleDirectCreatorUpload(event) {
   event.preventDefault();
   const name = document.getElementById('adminName').value.trim();
   const bio = document.getElementById('adminBio').value.trim();
   let avatar = document.getElementById('adminAvatar').value.trim();
-
   if (!avatar) {
     avatar = `https://placehold.co/120x120/141923/00F5FF?text=${name.substring(0, 2).toUpperCase()}`;
   }
-
   const newCreator = {
+    id: "cre_" + Date.now(),
     name: name,
     role: "creator",
     bio: bio,
@@ -863,62 +863,80 @@ async function handleDirectCreatorUpload(event) {
       facebook: document.getElementById('adminFacebook').value.trim()
     }
   };
-
-  try {
-    const response = await fetch('/api/creators', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        ...newCreator, adminPassword
-      })
-    });
-
-    if (response.ok) {
-      alertNotification('success', `Kreator "${name}" berhasil ditambahkan.`);
+  const {
+    ref,
+    push
+  } = require? Pake cara manual.
+  if (typeof push !== 'undefined') {
+    push(ref(db, 'creators'), newCreator)
+    .then(() => {
+      alertNotification('success', `Kreator "${name}" berhasil ditambahkan ke Realtime Database.`);
       document.getElementById('directCreatorForm').reset();
-      fetchCreators();
-    } else {
-      throw new Error('Gagal menambahkan');
+    })
+    .catch((err) => {
+      alertNotification('error', `Gagal menambahkan creator: ${err.message}`);
+    });
+  }
+}
+
+function approveRegistration(firebaseKey) {
+  const reg = registrationsList.find(r => r.firebaseKey === firebaseKey);
+  if (!reg) return;
+  const newCreator = {
+    id: "cre_" + Date.now(),
+    name: reg.name,
+    role: "creator",
+    bio: reg.details || `Kreator terdaftar sebagai spesialisasi Creator Minecraft Indonesia.`,
+    avatar: reg.avatarUrl ||
+    `https://placehold.co/120x120/141923/00F5FF?text=${reg.name.substring(0, 2).toUpperCase()}`,
+    socials: {
+      youtube: reg.socials?.youtube || "",
+      tiktok: reg.socials?.tiktok || "",
+      telegram: reg.socials?.telegram || "",
+      discord: reg.socials?.discord || "https://discord.gg/imcc",
+      instagram: reg.socials?.instagram || "",
+      github: reg.socials?.github || "",
+      whatsapp: reg.socials?.whatsapp || "",
+      donate: reg.socials?.donate || "",
+      facebook: reg.socials?.facebook || ""
     }
-  } catch (error) {
-    alertNotification('error', 'Gagal menambahkan creator');
+  };
+  const {
+    ref,
+    push,
+    remove
+  } = require? Pake cara manual.
+  if (typeof push !== 'undefined' && typeof remove !== 'undefined') {
+    push(ref(db, 'creators'), newCreator)
+    .then(() => {
+      remove(ref(db, 'registrations/' + firebaseKey))
+      .then(() => {
+        alertNotification('success', `Pendaftaran "${reg.name}" disetujui & otomatis dipublikasikan secara live!`);
+      });
+    })
+    .catch((err) => {
+      alertNotification('error', `Gagal memproses persetujuan: ${err.message}`);
+    });
   }
 }
 
-async function approveRegistration(firebaseKey) {
+function rejectRegistration(firebaseKey) {
   const reg = registrationsList.find(r => r.firebaseKey === firebaseKey);
   if (!reg) return;
-
-  const result = await adminApproveRegistration(firebaseKey, true);
-
-  if (result.success) {
-    alertNotification('success', `Pendaftaran "${reg.name}" disetujui!`);
-    fetchRegistrations();
-    fetchCreators();
-  } else {
-    alertNotification('error', result.error || 'Gagal memproses');
+  const {
+    ref,
+    remove
+  } = require? Pake cara manual.
+  if (typeof remove !== 'undefined') {
+    remove(ref(db, 'registrations/' + firebaseKey))
+    .then(() => {
+      alertNotification('error', `Pendaftaran "${reg.name}" berhasil ditolak.`);
+    })
+    .catch((err) => {
+      alertNotification('error', `Gagal menghapus antrean: ${err.message}`);
+    });
   }
 }
-
-async function rejectRegistration(firebaseKey) {
-  const reg = registrationsList.find(r => r.firebaseKey === firebaseKey);
-  if (!reg) return;
-
-  const result = await adminApproveRegistration(firebaseKey, false);
-
-  if (result.success) {
-    alertNotification('error', `Pendaftaran "${reg.name}" ditolak.`);
-    fetchRegistrations();
-  } else {
-    alertNotification('error', result.error || 'Gagal memproses');
-  }
-}
-
-// ============================================
-// CONFIRM MODAL FUNCTIONS
-// ============================================
 
 function closeConfirmModal() {
   const modal = document.getElementById('confirmModal');
@@ -936,7 +954,6 @@ async function updateActivePage() {
     'creators',
     'join',
     'admin'].includes(hash) ? hash: 'dashboard';
-
   if (pageId === 'admin') {
     const canAccess = await handleAdminNavigation('admin');
     if (!canAccess) {
@@ -945,26 +962,21 @@ async function updateActivePage() {
       return;
     }
   }
-
   sessionStorage.setItem('previousHash', pageId);
-
   document.querySelectorAll('.virtual-page').forEach(page => {
     page.classList.remove('page-active');
     page.classList.add('hidden');
   });
-
   const activePageDiv = document.getElementById(`page-${pageId}`);
   if (activePageDiv) {
     activePageDiv.classList.remove('hidden');
     void activePageDiv.offsetWidth;
     activePageDiv.classList.add('page-active');
   }
-
   document.querySelectorAll('.nav-pill').forEach(pill => {
     pill.className =
     "nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2 text-gray-300 border-white/5 bg-white/[0.02]";
   });
-
   const activeDesktopPill = document.querySelector(`.nav-pill[data-target="${pageId}"]`);
   if (activeDesktopPill) {
     const pillStyles = {
@@ -975,12 +987,10 @@ async function updateActivePage() {
     };
     activeDesktopPill.className = pillStyles[pageId] || pillStyles.dashboard;
   }
-
   document.querySelectorAll('.mobile-nav-pill').forEach(pill => {
     pill.className =
     "mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-semibold tracking-wider text-gray-300 bg-mineDark-900/90 border border-white/5 transition-all uppercase";
   });
-
   const activeMobilePill = document.querySelector(`.mobile-nav-pill[data-target="${pageId}"]`);
   if (activeMobilePill) {
     const mobilePillStyles = {
@@ -991,7 +1001,6 @@ async function updateActivePage() {
     };
     activeMobilePill.className = mobilePillStyles[pageId] || mobilePillStyles.dashboard;
   }
-
   window.scrollTo({
     top: 0, behavior: 'smooth'
   });
@@ -1023,7 +1032,6 @@ class Particle {
   update() {
     this.x += this.speedX;
     this.y += this.speedY;
-
     if (this.x > canvas.width) this.x = 0;
     if (this.x < 0) this.x = canvas.width;
     if (this.y > canvas.height) this.y = 0;
@@ -1062,15 +1070,12 @@ function animateParticles() {
 function filterCreators() {
   const searchInput = document.getElementById('creatorSearchInput');
   if (!searchInput) return;
-
   const searchVal = searchInput.value.toLowerCase().trim();
   const cards = document.querySelectorAll('.creator-card');
   let visibleCount = 0;
-
   cards.forEach(card => {
     const name = card.getAttribute('data-name').toLowerCase();
     const matchesSearch = name.includes(searchVal);
-
     if (matchesSearch) {
       card.classList.remove('hidden');
       visibleCount++;
@@ -1078,7 +1083,6 @@ function filterCreators() {
       card.classList.add('hidden');
     }
   });
-
   const emptyState = document.getElementById('noResults');
   if (visibleCount === 0 && cards.length > 0) {
     emptyState.classList.remove('hidden');
@@ -1094,7 +1098,6 @@ function filterCreators() {
 function alertNotification(type, message) {
   const container = document.getElementById('toastContainer');
   const toast = document.createElement('div');
-
   let borderColor = 'border-diamond';
   let icon = 'fa-circle-info text-diamond';
   if (type === 'success') {
@@ -1104,7 +1107,6 @@ function alertNotification(type, message) {
     borderColor = 'border-red-500';
     icon = 'fa-circle-exclamation text-red-500';
   }
-
   toast.className =
   `glass-panel ${borderColor} border-l-4 p-4 rounded-xl shadow-2xl flex items-center space-x-3 w-80 translate-y-10 opacity-0 transition-all duration-300 z-50`;
   toast.innerHTML = `
@@ -1116,13 +1118,10 @@ function alertNotification(type, message) {
   <i class="fa-solid fa-xmark text-xs"></i>
   </button>
   `;
-
   container.appendChild(toast);
-
   setTimeout(() => {
     toast.classList.remove('translate-y-10', 'opacity-0');
   }, 50);
-
   setTimeout(() => {
     toast.classList.add('translate-y-10', 'opacity-0');
     setTimeout(() => {
@@ -1173,10 +1172,8 @@ document.addEventListener('click', (e) => {
 document.getElementById('imccJoinForm').addEventListener('submit', handleFormSubmit);
 document.getElementById('directCreatorForm').addEventListener('submit', handleDirectCreatorUpload);
 document.getElementById('editCreatorForm').addEventListener('submit', handleEditCreatorSubmit);
-
 document.getElementById('confirmYesBtn').addEventListener('click', closeConfirmModal);
 document.getElementById('confirmNoBtn').addEventListener('click', closeConfirmModal);
-
 document.getElementById('tokenSubmitBtn').addEventListener('click', handleTokenSubmit);
 document.getElementById('tokenCancelBtn').addEventListener('click', hideTokenModal);
 
@@ -1199,9 +1196,10 @@ document.getElementById('useUploadedUrlBtn').addEventListener('click', function(
 });
 
 document.getElementById('creatorSearchInput').addEventListener('input', filterCreators);
-
 window.addEventListener('hashchange', updateActivePage);
+
 window.addEventListener('load', () => {
+  loadConfig(); // Load config dari server
   updateActivePage();
   resizeCanvas();
   initParticles();
@@ -1223,6 +1221,7 @@ window.rejectRegistration = rejectRegistration;
 window.deleteCreator = deleteCreator;
 window.openEditModal = openEditModal;
 window.closeEditModal = closeEditModal;
+window.checkAdminStatus = checkAdminStatus;
 window.isAdmin = () => isAdmin;
 window.alertNotification = alertNotification;
 window.updateActivePage = updateActivePage;
