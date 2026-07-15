@@ -2,10 +2,6 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
 
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
   if (req.method !== 'POST') {
     return res.status(405).json({
       error: 'Method not allowed'
@@ -13,7 +9,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Ambil file dari request
     const formData = await req.formData();
     const file = formData.get('file');
 
@@ -23,11 +18,11 @@ export default async function handler(req, res) {
       });
     }
 
-    // Forward ke API upload dengan key dari environment
+    // Forward ke API upload dengan API_KEY dari environment
     const forwardFormData = new FormData();
     forwardFormData.append('file', file);
     forwardFormData.append('r18', '0');
-    forwardFormData.append('token', process.env.IMAGE_API_KEY);
+    forwardFormData.append('token', process.env.IMAGE_API_KEY); // ← TERSEMBUNYI!
     forwardFormData.append('sha256', '');
 
     const response = await fetch(process.env.IMAGE_API_URL, {
@@ -39,8 +34,7 @@ export default async function handler(req, res) {
 
     if (data.status === 'success' && data.data?.url_direct) {
       res.status(200).json({
-        success: true,
-        url: data.data.url_direct
+        success: true, url: data.data.url_direct
       });
     } else {
       throw new Error('Upload gagal');
