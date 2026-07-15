@@ -1,0 +1,1226 @@
+// ============================================
+// VERCEL API CONFIGURATION
+// ============================================
+
+// Konfigurasi URL API Vercel (relative path)
+const VERIFY_API_URL = '/api/admin/verify';
+const CREATORS_API_URL = '/api/creators';
+const REGISTRATIONS_API_URL = '/api/registrations';
+const UPLOAD_API_URL = '/api/upload';
+const ADMIN_REGISTRATIONS_API_URL = '/api/admin/registrations';
+
+// ============================================
+// SOCIAL MEDIA CONFIGURATION (KONFIGURASI IKON)
+// ============================================
+
+// Konfigurasi standar untuk semua platform sosial media
+const SOCIAL_PLATFORMS = [{
+  key: 'youtube',
+  iconClass: 'fa-brands fa-youtube',
+  color: 'red',
+  bgColor: 'red',
+  label: 'YouTube',
+  textColor: 'text-red-500'
+},
+  {
+    key: 'tiktok',
+    iconClass: 'fa-brands fa-tiktok',
+    color: 'pink',
+    bgColor: 'pink',
+    label: 'TikTok',
+    textColor: 'text-pink-400'
+  },
+  {
+    key: 'telegram',
+    iconClass: 'fa-brands fa-telegram',
+    color: 'sky',
+    bgColor: 'sky',
+    label: 'Telegram',
+    textColor: 'text-sky-400'
+  },
+  {
+    key: 'discord',
+    iconClass: 'fa-brands fa-discord',
+    color: 'indigo',
+    bgColor: 'indigo',
+    label: 'Discord',
+    textColor: 'text-indigo-400'
+  },
+  {
+    key: 'instagram',
+    iconClass: 'fa-brands fa-instagram',
+    color: 'pink',
+    bgColor: 'pink',
+    label: 'Instagram',
+    textColor: 'text-pink-400'
+  },
+  {
+    key: 'github',
+    iconClass: 'fa-brands fa-github',
+    color: 'gray',
+    bgColor: 'gray',
+    label: 'GitHub',
+    textColor: 'text-gray-400'
+  },
+  {
+    key: 'whatsapp',
+    iconClass: 'fa-brands fa-whatsapp',
+    color: 'emerald',
+    bgColor: 'emerald',
+    label: 'WhatsApp Channel',
+    textColor: 'text-emerald-500'
+  },
+  {
+    key: 'donate',
+    iconClass: 'fa-solid fa-hand-holding-dollar',
+    color: 'emeraldGlow',
+    bgColor: 'emerald',
+    label: 'Dukungan / Donate',
+    textColor: 'text-emeraldGlow',
+    isSolid: true
+  },
+  {
+    key: 'facebook',
+    iconClass: 'fa-brands fa-facebook',
+    color: 'blue',
+    bgColor: 'blue',
+    label: 'Facebook',
+    textColor: 'text-blue-500'
+  }];
+
+// ============================================
+// GLOBAL STATE
+// ============================================
+
+let isAdmin = false;
+let targetInputId = null;
+let creatorsList = [];
+let registrationsList = [];
+let adminPassword = '';
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+// Check session storage for admin status
+const storedAdminStatus = sessionStorage.getItem('isAdmin');
+if (storedAdminStatus === 'true') {
+  isAdmin = true;
+  showAdminUI();
+}
+
+// Fetch data from Vercel API
+fetchCreators();
+fetchRegistrations();
+
+// ============================================
+// ADMIN ROLE MANAGEMENT
+// ============================================
+
+/**
+* Show admin UI elements
+*/
+function showAdminUI() {
+  isAdmin = true;
+
+  document.querySelectorAll('.admin-only').forEach(el => {
+    if (el.tagName === 'A' && el.classList.contains('nav-pill')) {
+      el.classList.add('visible');
+    } else if (el.tagName === 'A' && el.classList.contains('mobile-nav-pill')) {
+      el.classList.add('visible');
+    } else if (el.tagName === 'LI') {
+      el.style.display = 'list-item';
+    } else {
+      el.style.display = 'flex';
+    }
+  });
+
+  sessionStorage.setItem('isAdmin',
+    'true');
+}
+
+/**
+* Hide admin UI elements
+*/
+function hideAdminUI() {
+  isAdmin = false;
+
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = 'none';
+    el.classList.remove('visible', 'inline-visible');
+  });
+
+  sessionStorage.setItem('isAdmin',
+    'false');
+}
+
+// ============================================
+// API CALLS KE VERCEL BACKEND
+// ============================================
+
+/**
+* Fetch all creators from Vercel API
+*/
+async function fetchCreators() {
+  try {
+    const response = await fetch(CREATORS_API_URL);
+    const data = await response.json();
+    creatorsList = data;
+    renderCreators();
+    renderAdminCreators();
+    updateStatsCounter();
+  } catch (error) {
+    console.error('Gagal fetch creators:',
+      error);
+    alertNotification('error',
+      'Gagal mengambil data creator');
+  }
+}
+
+/**
+* Fetch all registrations from Vercel API (admin only)
+*/
+async function fetchRegistrations() {
+  try {
+    const response = await fetch(`${REGISTRATIONS_API_URL}?password=${adminPassword}`);
+    const data = await response.json();
+    registrationsList = data;
+    renderAdminRegistrations();
+  } catch (error) {
+    console.error('Gagal fetch registrations:',
+      error);
+  }
+}
+
+/**
+* Verifikasi password admin via Vercel API
+*/
+async function verifyAdminPassword(password) {
+  try {
+    const response = await fetch(VERIFY_API_URL,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          password
+        }),
+      });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      adminPassword = password;
+      return {
+        success: true,
+        data
+      };
+    } else {
+      return {
+        success: false,
+        error: data.error || 'Verifikasi gagal'
+      };
+    }
+  } catch (error) {
+    console.error('Error verifying admin:', error);
+    return {
+      success: false,
+      error: 'Gagal terhubung ke server'
+    };
+  }
+}
+
+/**
+* Submit registration via Vercel API
+*/
+async function submitRegistration(formData) {
+  try {
+    const response = await fetch(REGISTRATIONS_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(formData),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error submitting registration:', error);
+    return {
+      success: false,
+      error: 'Gagal mendaftar'
+    };
+  }
+}
+
+/**
+* Upload image via Vercel API (API key tersembunyi di server)
+*/
+async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const response = await fetch(UPLOAD_API_URL, {
+      method: 'POST',
+      body: formData,
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    return {
+      success: false,
+      error: 'Gagal upload gambar'
+    };
+  }
+}
+
+/**
+* Admin approve registration via Vercel API
+*/
+async function adminApproveRegistration(id, approve) {
+  try {
+    const response = await fetch(`${ADMIN_REGISTRATIONS_API_URL}/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        adminPassword,
+        isApproved: approve
+      }),
+    });
+    return await response.json();
+  } catch (error) {
+    console.error('Error approving registration:', error);
+    return {
+      success: false,
+      error: 'Gagal memproses'
+    };
+  }
+}
+
+// ============================================
+// TOKEN AUTHENTICATION SYSTEM - VERCEL API
+// ============================================
+
+/**
+* Show token login modal
+*/
+function showTokenModal() {
+  const modal = document.getElementById('tokenModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+  document.getElementById('tokenInput').value = '';
+  document.getElementById('tokenError').classList.add('hidden');
+  document.getElementById('tokenInput').focus();
+}
+
+/**
+* Hide token login modal
+*/
+function hideTokenModal() {
+  const modal = document.getElementById('tokenModal');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+}
+
+/**
+* Handle token submission - Menggunakan Vercel API
+*/
+async function handleTokenSubmit() {
+  const tokenInput = document.getElementById('tokenInput');
+  const tokenError = document.getElementById('tokenError');
+  const enteredToken = tokenInput.value.trim();
+
+  const submitBtn = document.getElementById('tokenSubmitBtn');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memverifikasi...';
+  submitBtn.disabled = true;
+
+  try {
+    const result = await verifyAdminPassword(enteredToken);
+
+    if (result.success) {
+      showAdminUI();
+      hideTokenModal();
+      alertNotification('success', '✅ Token valid! Anda sekarang memiliki akses admin.');
+      window.location.hash = 'admin';
+      // Refresh data registrations setelah login admin
+      fetchRegistrations();
+    } else {
+      tokenError.classList.remove('hidden');
+      tokenError.textContent = result.error || 'Token salah. Silakan coba lagi.';
+      tokenInput.value = '';
+      tokenInput.focus();
+    }
+  } catch (error) {
+    tokenError.classList.remove('hidden');
+    tokenError.textContent = 'Terjadi kesalahan, coba lagi nanti.';
+  } finally {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  }
+}
+
+/**
+* Handle admin navigation with token check via Vercel API
+*/
+async function handleAdminNavigation(targetHash) {
+  if (targetHash === 'admin') {
+    if (isAdmin) {
+      return true;
+    } else {
+      showTokenModal();
+      return false;
+    }
+  }
+  return true;
+}
+
+// ============================================
+// HELPER FUNCTION: Membangun HTML Sosial Media
+// ============================================
+
+function buildSocialIconsHTML(socials) {
+  if (!socials) return '<span class="text-[10px] text-gray-600 italic">Tidak ada tautan sosial</span>';
+
+  let html = '';
+
+  SOCIAL_PLATFORMS.forEach(platform => {
+    if (socials[platform.key]) {
+      html += `
+      <a href="${socials[platform.key]}"
+      target="_blank"
+      class="w-8 h-8 rounded-lg bg-${platform.bgColor}-600/10 hover:bg-${platform.bgColor}-600/30 border border-${platform.color}-500/20 flex items-center justify-center ${platform.textColor} hover:text-white transition-all text-sm"
+      title="${platform.label}">
+      <i class="${platform.iconClass}"></i>
+      </a>`;
+    }
+  });
+
+  return html || '<span class="text-[10px] text-gray-600 italic">Tidak ada tautan sosial</span>';
+}
+
+function buildAdminSocialIconsHTML(socials) {
+  if (!socials) return '<span class="text-gray-600">None</span>';
+
+  let html = '';
+
+  SOCIAL_PLATFORMS.forEach(platform => {
+    if (socials[platform.key]) {
+      html += `<i class="${platform.iconClass} ${platform.textColor}" title="${platform.label}"></i> `;
+    }
+  });
+
+  return html.trim() || '<span class="text-gray-600">None</span>';
+}
+
+// ============================================
+// UPLOAD MODAL FUNCTIONS
+// ============================================
+
+window.openUploadModal = function(inputId) {
+  targetInputId = inputId;
+  const modal = document.getElementById('uploadModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+
+  document.getElementById('uploadProgressContainer').classList.add('hidden');
+  document.getElementById('uploadResult').classList.add('hidden');
+  document.getElementById('uploadPreview').classList.add('hidden');
+  document.getElementById('uploadPlaceholder').classList.remove('hidden');
+  document.getElementById('fileInput').value = '';
+};
+
+window.closeUploadModal = function() {
+  const modal = document.getElementById('uploadModal');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+  targetInputId = null;
+};
+
+window.handleFileSelect = function(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('uploadPreview');
+    const placeholder = document.getElementById('uploadPlaceholder');
+    preview.src = e.target.result;
+    preview.classList.remove('hidden');
+    placeholder.classList.add('hidden');
+  };
+  reader.readAsDataURL(file);
+
+  uploadImage(file);
+};
+
+async function uploadImage(file) {
+  const progressContainer = document.getElementById('uploadProgressContainer');
+  const progressBar = document.getElementById('uploadProgressBar');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const uploadResult = document.getElementById('uploadResult');
+  const uploadedUrl = document.getElementById('uploadedUrl');
+
+  progressContainer.classList.remove('hidden');
+  uploadResult.classList.add('hidden');
+
+  let progress = 0;
+  const progressInterval = setInterval(() => {
+    if (progress < 90) {
+      progress += Math.random() * 15;
+      if (progress > 90) progress = 90;
+      progressBar.style.width = progress + '%';
+    }
+  },
+    200);
+
+  uploadStatus.textContent = 'Mengupload...';
+
+  try {
+    const result = await uploadImage(file);
+
+    clearInterval(progressInterval);
+    progressBar.style.width = '100%';
+
+    if (result.success && result.url) {
+      uploadedUrl.value = result.url;
+      uploadStatus.textContent = 'Upload berhasil!';
+      uploadResult.classList.remove('hidden');
+      progressContainer.classList.add('hidden');
+      alertNotification('success', 'Foto berhasil diupload! URL siap digunakan.');
+    } else {
+      throw new Error(result.error || 'Upload gagal');
+    }
+  } catch (error) {
+    clearInterval(progressInterval);
+    progressBar.style.width = '0%';
+    uploadStatus.textContent = 'Gagal: ' + error.message;
+    progressContainer.classList.add('hidden');
+    alertNotification('error', 'Gagal mengupload foto: ' + error.message);
+  }
+}
+
+window.copyUploadedUrl = function() {
+  const uploadedUrl = document.getElementById('uploadedUrl');
+  uploadedUrl.select();
+  document.execCommand('copy');
+  alertNotification('success', 'URL berhasil disalin ke clipboard!');
+};
+
+// ============================================
+// UI RENDER FUNCTIONS
+// ============================================
+
+function updateStatsCounter() {
+  const counter = document.getElementById('stats-count');
+  if (counter) {
+    counter.innerText = creatorsList.length;
+  }
+  const adminCounter = document.getElementById('adminStatsCount');
+  if (adminCounter) {
+    adminCounter.innerText = creatorsList.length;
+  }
+}
+
+function renderCreators() {
+  const grid = document.getElementById('creatorsGrid');
+  if (!grid) return;
+
+  grid.innerHTML = '';
+
+  if (creatorsList.length === 0) {
+    grid.innerHTML = `
+    <div class="col-span-full text-center py-20 bg-white/[0.01] border border-dashed border-white/10 rounded-3xl">
+    <i class="fa-regular fa-folder-open text-gray-600 text-5xl mb-4"></i>
+    <h3 class="text-lg font-bold text-gray-400">Belum ada creator terdaftar</h3>
+    <p class="text-gray-500 text-xs mt-2">Creator akan muncul di sini setelah ditambahkan melalui Panel Admin.</p>
+    </div>
+    `;
+    return;
+  }
+
+  creatorsList.forEach(creator => {
+    const socialsHTML = buildSocialIconsHTML(creator.socials);
+    const avatarImg = creator.avatar || 'https://placehold.co/120x120/141923/ffffff?text=' + creator.name.substring(0, 2).toUpperCase();
+
+    const cardHTML = `
+    <div class="creator-card glass-panel rounded-3xl overflow-hidden border border-white/5 transition-all duration-300 select-none" data-name="${creator.name}">
+    <div class="h-28 w-full relative">
+    <img src="https://i.urusai.cc/HlvoE.jpg" class="w-full h-full object-cover object-top absolute inset-0" alt="Minecraft Banner">
+    <div class="absolute inset-0 bg-gradient-to-t from-mineDark-950/90 via-mineDark-950/20 to-transparent"></div>
+    </div>
+    <div class="relative px-6 -mt-10 z-10 flex justify-between items-end">
+    <div class="w-20 h-20 rounded-2xl bg-mineDark-950 p-[3px] shadow-2xl border-2 border-white/10 overflow-hidden">
+    <img src="${avatarImg}" onerror="this.src='https://placehold.co/120x120/141923/ffffff?text=MC'" alt="${creator.name}" class="w-full h-full rounded-2xl object-cover">
+    </div>
+    <span class="text-[9px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-full whitespace-nowrap mb-1 bg-diamond/10 text-diamond border border-diamond/20">Creator</span>
+    </div>
+    <div class="pt-4 px-6 pb-6 relative">
+    <div>
+    <h3 class="text-lg font-bold text-white">${creator.name}</h3>
+    <p class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider mt-0.5">Minecraft Creator</p>
+    </div>
+    <p class="text-gray-400 text-xs mt-4 leading-relaxed h-16 overflow-y-auto pr-1">
+    ${creator.bio || 'Tidak ada deskripsi'}
+    </p>
+    <div class="flex flex-wrap items-center gap-2 mt-5 py-3 border-t border-white/5">
+    ${socialsHTML}
+    </div>
+    </div>
+    </div>
+    `;
+    grid.insertAdjacentHTML('beforeend', cardHTML);
+  });
+
+  filterCreators();
+}
+
+function renderAdminRegistrations() {
+  const list = document.getElementById('pendingRegistrationsList');
+  if (!list) return;
+
+  list.innerHTML = '';
+
+  if (registrationsList.length === 0) {
+    list.innerHTML = `
+    <div class="text-center py-12 bg-white/[0.01] border border-dashed border-white/5 rounded-2xl">
+    <i class="fa-solid fa-circle-check text-gray-600 text-3xl mb-3"></i>
+    <p class="text-xs text-gray-500 font-bold uppercase">Antrean Bersih</p>
+    <p class="text-[10px] text-gray-600 mt-1">Tidak ada pengajuan pendaftaran baru.</p>
+    </div>
+    `;
+    return;
+  }
+
+  registrationsList.forEach((reg, index) => {
+    const avatarIcon = reg.avatarUrl ?
+    `<img src="${reg.avatarUrl}" class="w-8 h-8 rounded-full object-cover border border-white/20 mr-2" />`:
+    '';
+    const itemHTML = `
+    <div class="glass-panel p-5 rounded-2xl border border-white/5 hover:border-white/10 transition-all space-y-3 relative overflow-hidden">
+    <div class="absolute right-0 top-0 text-[50px] font-bold text-white/[0.02] font-mono pointer-events-none select-none">
+    #${index + 1}
+    </div>
+    <div class="flex justify-between items-start">
+    <div class="flex items-center">
+    ${avatarIcon}
+    <div>
+    <h4 class="text-sm font-bold text-white font-mono">${reg.name}</h4>
+    <p class="text-[10px] text-emeraldGlow font-bold mt-0.5"><i class="fa-solid fa-square-phone mr-1"></i>${reg.phone}</p>
+    </div>
+    </div>
+    <span class="text-[8px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-diamond/10 text-diamond border border-diamond/20">
+    Creator
+    </span>
+    </div>
+    <p class="text-[11px] text-gray-400 bg-mineDark-950 p-3 rounded-lg border border-white/[0.02]">
+    ${reg.details || '<span class="text-gray-600 italic">Tanpa info detail opsional</span>'}
+    </p>
+    <div class="flex gap-2 pt-1">
+    <button onclick="approveRegistration('${reg.firebaseKey}')" class="px-4 py-1.5 bg-emerald-500 hover:bg-emerald-400 text-black text-[10px] font-extrabold rounded-lg tracking-wider transition-colors uppercase font-mono">
+    <i class="fa-solid fa-check mr-1"></i> Terima
+    </button>
+    <button onclick="rejectRegistration('${reg.firebaseKey}')" class="px-4 py-1.5 bg-red-500/10 hover:bg-red-500/30 border border-red-500/30 text-red-400 hover:text-white text-[10px] font-bold rounded-lg tracking-wider transition-colors uppercase font-mono">
+    <i class="fa-solid fa-trash mr-1"></i> Tolak
+    </button>
+    </div>
+    </div>
+    `;
+    list.insertAdjacentHTML('beforeend', itemHTML);
+  });
+}
+
+function renderAdminCreators() {
+  const tableBody = document.getElementById('adminCreatorsTableBody');
+  if (!tableBody) return;
+
+  tableBody.innerHTML = '';
+
+  if (creatorsList.length === 0) {
+    tableBody.innerHTML = `
+    <tr>
+    <td colspan="4" class="py-8 text-center text-gray-500 italic">Tidak ada creator terdaftar di database.</td>
+    </tr>
+    `;
+    return;
+  }
+
+  creatorsList.forEach(creator => {
+    const avatarImg = creator.avatar || 'https://placehold.co/120x120/141923/ffffff?text=' + creator.name.substring(0, 2).toUpperCase();
+    const platformsHTML = buildAdminSocialIconsHTML(creator.socials);
+
+    const rowHTML = `
+    <tr class="hover:bg-white/[0.02] transition-colors border-b border-white/5">
+    <td class="py-3 pl-2 flex items-center gap-3">
+    <img src="${avatarImg}" onerror="this.src='https://placehold.co/120x120/141923/ffffff?text=MC'" class="w-8 h-8 rounded-xl object-cover border border-white/10" />
+    <div>
+    <h4 class="font-bold text-white font-mono">${creator.name}</h4>
+    <span class="text-[8px] bg-diamond/10 text-diamond border border-diamond/20 px-1.5 py-0.5 rounded">Creator</span>
+    </div>
+    </td>
+    <td class="py-3 hidden md:table-cell text-gray-400 max-w-xs truncate" title="${creator.bio}">
+    ${creator.bio || 'Tidak ada deskripsi'}
+    </td>
+    <td class="py-3 hidden sm:table-cell">
+    <div class="flex items-center gap-2 text-sm">
+    ${platformsHTML}
+    </div>
+    </td>
+    <td class="py-3 text-right pr-2">
+    <div class="flex items-center justify-end gap-2">
+    <button onclick="openEditModal('${creator.firebaseKey}')" class="px-2.5 py-1 border border-diamond/30 hover:border-diamond bg-diamond/5 hover:bg-diamond/10 text-diamond text-[10px] font-bold rounded-lg transition-colors">
+    <i class="fa-solid fa-user-gear"></i> Edit
+    </button>
+    <button onclick="deleteCreator('${creator.firebaseKey}')" class="px-2.5 py-1 border border-red-500/30 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 text-red-400 hover:text-white text-[10px] font-bold rounded-lg transition-colors">
+    <i class="fa-solid fa-trash-can"></i> Hapus
+    </button>
+    </div>
+    </td>
+    </tr>
+    `;
+    tableBody.insertAdjacentHTML('beforeend', rowHTML);
+  });
+}
+
+// ============================================
+// DATA MUTATION FUNCTIONS
+// ============================================
+
+async function deleteCreator(firebaseKey) {
+  const creator = creatorsList.find(c => c.firebaseKey === firebaseKey);
+  if (!creator) return;
+
+  if (!confirm(`Yakin mau hapus "${creator.name}"?`)) return;
+
+  try {
+    const response = await fetch(`/api/creators/${firebaseKey}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        adminPassword
+      })
+    });
+
+    if (response.ok) {
+      alertNotification('error', `Creator "${creator.name}" telah dihapus.`);
+      fetchCreators();
+    } else {
+      throw new Error('Gagal menghapus');
+    }
+  } catch (error) {
+    alertNotification('error', 'Gagal menghapus creator');
+  }
+}
+
+function openEditModal(firebaseKey) {
+  const creator = creatorsList.find(c => c.firebaseKey === firebaseKey);
+  if (!creator) return;
+
+  document.getElementById('editKey').value = firebaseKey;
+  document.getElementById('editName').value = creator.name || '';
+  document.getElementById('editAvatar').value = creator.avatar || '';
+  document.getElementById('editBio').value = creator.bio || '';
+
+  const socials = creator.socials || {};
+  document.getElementById('editYoutube').value = socials.youtube || '';
+  document.getElementById('editTiktok').value = socials.tiktok || '';
+  document.getElementById('editTelegram').value = socials.telegram || '';
+  document.getElementById('editDiscord').value = socials.discord || '';
+  document.getElementById('editInstagram').value = socials.instagram || '';
+  document.getElementById('editGithub').value = socials.github || '';
+  document.getElementById('editWhatsapp').value = socials.whatsapp || '';
+  document.getElementById('editDonate').value = socials.donate || '';
+  document.getElementById('editFacebook').value = socials.facebook || '';
+
+  const modal = document.getElementById('editModal');
+  modal.classList.remove('hidden');
+  modal.classList.add('flex');
+}
+
+function closeEditModal() {
+  const modal = document.getElementById('editModal');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+  document.getElementById('editCreatorForm').reset();
+}
+
+async function handleEditCreatorSubmit(event) {
+  event.preventDefault();
+  const firebaseKey = document.getElementById('editKey').value;
+  if (!firebaseKey) return;
+
+  const updatedData = {
+    name: document.getElementById('editName').value.trim(),
+    avatar: document.getElementById('editAvatar').value.trim() ||
+    `https://placehold.co/120x120/141923/00F5FF?text=${document.getElementById('editName').value.substring(0, 2).toUpperCase()}`,
+    bio: document.getElementById('editBio').value.trim(),
+    socials: {
+      youtube: document.getElementById('editYoutube').value.trim(),
+      tiktok: document.getElementById('editTiktok').value.trim(),
+      telegram: document.getElementById('editTelegram').value.trim(),
+      discord: document.getElementById('editDiscord').value.trim(),
+      instagram: document.getElementById('editInstagram').value.trim(),
+      github: document.getElementById('editGithub').value.trim(),
+      whatsapp: document.getElementById('editWhatsapp').value.trim(),
+      donate: document.getElementById('editDonate').value.trim(),
+      facebook: document.getElementById('editFacebook').value.trim()
+    }
+  };
+
+  try {
+    const response = await fetch(`/api/creators/${firebaseKey}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...updatedData, adminPassword
+      })
+    });
+
+    if (response.ok) {
+      alertNotification('success', `Profil "${updatedData.name}" berhasil diperbarui.`);
+      closeEditModal();
+      fetchCreators();
+    } else {
+      throw new Error('Gagal memperbarui');
+    }
+  } catch (error) {
+    alertNotification('error', 'Gagal memperbarui profil');
+  }
+}
+
+async function handleFormSubmit(event) {
+  event.preventDefault();
+  const fullName = document.getElementById('fullName').value.trim();
+  const phoneNumber = document.getElementById('phoneNumber').value.trim();
+  const avatarUrl = document.getElementById('avatarUrl').value.trim();
+  const optionalDetails = document.getElementById('optionalDetails').value.trim();
+
+  const formData = {
+    name: fullName,
+    phone: phoneNumber,
+    role: "creator",
+    avatarUrl: avatarUrl,
+    socials: {
+      youtube: document.getElementById('joinYoutube').value.trim(),
+      tiktok: document.getElementById('joinTiktok').value.trim(),
+      telegram: document.getElementById('joinTelegram').value.trim(),
+      discord: document.getElementById('joinDiscord').value.trim(),
+      instagram: document.getElementById('joinInstagram').value.trim(),
+      github: document.getElementById('joinGithub').value.trim(),
+      whatsapp: document.getElementById('joinWhatsapp').value.trim(),
+      donate: document.getElementById('joinDonate').value.trim(),
+      facebook: document.getElementById('joinFacebook').value.trim()
+    },
+    details: optionalDetails
+  };
+
+  const result = await submitRegistration(formData);
+
+  if (result.success) {
+    alertNotification('success', result.message);
+    document.getElementById('imccJoinForm').reset();
+  } else {
+    alertNotification('error', result.error || 'Gagal mendaftar');
+  }
+}
+
+async function handleDirectCreatorUpload(event) {
+  event.preventDefault();
+  const name = document.getElementById('adminName').value.trim();
+  const bio = document.getElementById('adminBio').value.trim();
+  let avatar = document.getElementById('adminAvatar').value.trim();
+
+  if (!avatar) {
+    avatar = `https://placehold.co/120x120/141923/00F5FF?text=${name.substring(0, 2).toUpperCase()}`;
+  }
+
+  const newCreator = {
+    name: name,
+    role: "creator",
+    bio: bio,
+    avatar: avatar,
+    socials: {
+      youtube: document.getElementById('adminYoutube').value.trim(),
+      tiktok: document.getElementById('adminTiktok').value.trim(),
+      telegram: document.getElementById('adminTelegram').value.trim(),
+      discord: document.getElementById('adminDiscord').value.trim(),
+      instagram: document.getElementById('adminInstagram').value.trim(),
+      github: document.getElementById('adminGithub').value.trim(),
+      whatsapp: document.getElementById('adminWhatsapp').value.trim(),
+      donate: document.getElementById('adminDonate').value.trim(),
+      facebook: document.getElementById('adminFacebook').value.trim()
+    }
+  };
+
+  try {
+    const response = await fetch('/api/creators', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        ...newCreator, adminPassword
+      })
+    });
+
+    if (response.ok) {
+      alertNotification('success', `Kreator "${name}" berhasil ditambahkan.`);
+      document.getElementById('directCreatorForm').reset();
+      fetchCreators();
+    } else {
+      throw new Error('Gagal menambahkan');
+    }
+  } catch (error) {
+    alertNotification('error', 'Gagal menambahkan creator');
+  }
+}
+
+async function approveRegistration(firebaseKey) {
+  const reg = registrationsList.find(r => r.firebaseKey === firebaseKey);
+  if (!reg) return;
+
+  const result = await adminApproveRegistration(firebaseKey, true);
+
+  if (result.success) {
+    alertNotification('success', `Pendaftaran "${reg.name}" disetujui!`);
+    fetchRegistrations();
+    fetchCreators();
+  } else {
+    alertNotification('error', result.error || 'Gagal memproses');
+  }
+}
+
+async function rejectRegistration(firebaseKey) {
+  const reg = registrationsList.find(r => r.firebaseKey === firebaseKey);
+  if (!reg) return;
+
+  const result = await adminApproveRegistration(firebaseKey, false);
+
+  if (result.success) {
+    alertNotification('error', `Pendaftaran "${reg.name}" ditolak.`);
+    fetchRegistrations();
+  } else {
+    alertNotification('error', result.error || 'Gagal memproses');
+  }
+}
+
+// ============================================
+// CONFIRM MODAL FUNCTIONS
+// ============================================
+
+function closeConfirmModal() {
+  const modal = document.getElementById('confirmModal');
+  modal.classList.remove('flex');
+  modal.classList.add('hidden');
+}
+
+// ============================================
+// CLIENT-SIDE ROUTER SYSTEM
+// ============================================
+
+async function updateActivePage() {
+  const hash = window.location.hash.slice(1) || 'dashboard';
+  const pageId = ['dashboard',
+    'creators',
+    'join',
+    'admin'].includes(hash) ? hash: 'dashboard';
+
+  if (pageId === 'admin') {
+    const canAccess = await handleAdminNavigation('admin');
+    if (!canAccess) {
+      const previousHash = sessionStorage.getItem('previousHash') || 'dashboard';
+      window.location.hash = previousHash;
+      return;
+    }
+  }
+
+  sessionStorage.setItem('previousHash', pageId);
+
+  document.querySelectorAll('.virtual-page').forEach(page => {
+    page.classList.remove('page-active');
+    page.classList.add('hidden');
+  });
+
+  const activePageDiv = document.getElementById(`page-${pageId}`);
+  if (activePageDiv) {
+    activePageDiv.classList.remove('hidden');
+    void activePageDiv.offsetWidth;
+    activePageDiv.classList.add('page-active');
+  }
+
+  document.querySelectorAll('.nav-pill').forEach(pill => {
+    pill.className =
+    "nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2 text-gray-300 border-white/5 bg-white/[0.02]";
+  });
+
+  const activeDesktopPill = document.querySelector(`.nav-pill[data-target="${pageId}"]`);
+  if (activeDesktopPill) {
+    const pillStyles = {
+      dashboard: "nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2 border-diamond/50 bg-diamond/10 text-diamond glow-cyan",
+      creators: "nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2 border-emeraldGlow/50 bg-emeraldGlow/10 text-emeraldGlow glow-emerald",
+      join: "nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2 bg-gradient-to-r from-diamond to-emeraldGlow text-black border-transparent shadow-lg",
+      admin: "nav-pill px-5 py-2.5 rounded-xl text-xs font-bold tracking-widest border transition-all duration-300 uppercase flex items-center gap-2 border-yellow-500/50 bg-yellow-500/10 text-yellow-500"
+    };
+    activeDesktopPill.className = pillStyles[pageId] || pillStyles.dashboard;
+  }
+
+  document.querySelectorAll('.mobile-nav-pill').forEach(pill => {
+    pill.className =
+    "mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-semibold tracking-wider text-gray-300 bg-mineDark-900/90 border border-white/5 transition-all uppercase";
+  });
+
+  const activeMobilePill = document.querySelector(`.mobile-nav-pill[data-target="${pageId}"]`);
+  if (activeMobilePill) {
+    const mobilePillStyles = {
+      dashboard: "mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-semibold tracking-wider text-diamond bg-diamond/5 border-diamond/30 transition-all uppercase",
+      creators: "mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-semibold tracking-wider text-emeraldGlow bg-emeraldGlow/5 border-emeraldGlow/30 transition-all uppercase",
+      join: "mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-bold tracking-wider text-black bg-gradient-to-r from-diamond to-emeraldGlow transition-all uppercase",
+      admin: "mobile-nav-pill flex items-center justify-between px-5 py-4 rounded-xl text-sm font-bold tracking-wider text-yellow-500 bg-yellow-500/5 border-yellow-500/30 transition-all uppercase"
+    };
+    activeMobilePill.className = mobilePillStyles[pageId] || mobilePillStyles.dashboard;
+  }
+
+  window.scrollTo({
+    top: 0, behavior: 'smooth'
+  });
+}
+
+// ============================================
+// PARTICLE SYSTEM
+// ============================================
+
+const canvas = document.getElementById('particleCanvas');
+const ctx = canvas.getContext('2d');
+let particlesArray = [];
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+
+class Particle {
+  constructor() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 2 + 0.5;
+    this.speedX = Math.random() * 0.3 - 0.15;
+    this.speedY = Math.random() * 0.3 - 0.15;
+    this.color = Math.random() > 0.5 ? '#00F5FF': '#00FF87';
+    this.opacity = Math.random() * 0.4 + 0.1;
+  }
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+
+    if (this.x > canvas.width) this.x = 0;
+    if (this.x < 0) this.x = canvas.width;
+    if (this.y > canvas.height) this.y = 0;
+    if (this.y < 0) this.y = canvas.height;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.globalAlpha = this.opacity;
+    ctx.fill();
+  }
+}
+
+function initParticles() {
+  particlesArray = [];
+  const numberOfParticles = Math.floor((canvas.width * canvas.height) / 13000);
+  for (let i = 0; i < numberOfParticles; i++) {
+    particlesArray.push(new Particle());
+  }
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  for (let i = 0; i < particlesArray.length; i++) {
+    particlesArray[i].update();
+    particlesArray[i].draw();
+  }
+  requestAnimationFrame(animateParticles);
+}
+
+// ============================================
+// SEARCH & FILTER FUNCTIONALITY
+// ============================================
+
+function filterCreators() {
+  const searchInput = document.getElementById('creatorSearchInput');
+  if (!searchInput) return;
+
+  const searchVal = searchInput.value.toLowerCase().trim();
+  const cards = document.querySelectorAll('.creator-card');
+  let visibleCount = 0;
+
+  cards.forEach(card => {
+    const name = card.getAttribute('data-name').toLowerCase();
+    const matchesSearch = name.includes(searchVal);
+
+    if (matchesSearch) {
+      card.classList.remove('hidden');
+      visibleCount++;
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+
+  const emptyState = document.getElementById('noResults');
+  if (visibleCount === 0 && cards.length > 0) {
+    emptyState.classList.remove('hidden');
+  } else {
+    emptyState.classList.add('hidden');
+  }
+}
+
+// ============================================
+// TOAST NOTIFICATION SYSTEM
+// ============================================
+
+function alertNotification(type, message) {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+
+  let borderColor = 'border-diamond';
+  let icon = 'fa-circle-info text-diamond';
+  if (type === 'success') {
+    borderColor = 'border-emeraldGlow';
+    icon = 'fa-circle-check text-emeraldGlow';
+  } else if (type === 'error') {
+    borderColor = 'border-red-500';
+    icon = 'fa-circle-exclamation text-red-500';
+  }
+
+  toast.className =
+  `glass-panel ${borderColor} border-l-4 p-4 rounded-xl shadow-2xl flex items-center space-x-3 w-80 translate-y-10 opacity-0 transition-all duration-300 z-50`;
+  toast.innerHTML = `
+  <i class="fa-solid ${icon} text-lg"></i>
+  <div class="flex-1">
+  <p class="text-xs font-semibold text-white">${message}</p>
+  </div>
+  <button onclick="this.parentElement.remove()" class="text-gray-500 hover:text-white transition-colors">
+  <i class="fa-solid fa-xmark text-xs"></i>
+  </button>
+  `;
+
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.classList.remove('translate-y-10', 'opacity-0');
+  }, 50);
+
+  setTimeout(() => {
+    toast.classList.add('translate-y-10', 'opacity-0');
+    setTimeout(() => {
+      toast.remove();
+    }, 300);
+  }, 5000);
+}
+
+// ============================================
+// MOBILE MENU LOGIC
+// ============================================
+
+const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+const mobileMenu = document.getElementById('mobileMenu');
+const menuIcon = document.getElementById('menuIcon');
+
+mobileMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const isOpen = !mobileMenu.classList.contains('hidden');
+  if (isOpen) {
+    mobileMenu.classList.add('hidden');
+    menuIcon.className = 'fa-solid fa-bars text-2xl';
+  } else {
+    mobileMenu.classList.remove('hidden');
+    menuIcon.className = 'fa-solid fa-xmark text-2xl';
+  }
+});
+
+document.querySelectorAll('#mobileMenu a').forEach(link => {
+  link.addEventListener('click', () => {
+    mobileMenu.classList.add('hidden');
+    menuIcon.className = 'fa-solid fa-bars text-2xl';
+  });
+});
+
+document.addEventListener('click', (e) => {
+  if (!mobileMenu.classList.contains('hidden') && !mobileMenu.contains(e.target) && e.target !==
+    mobileMenuBtn) {
+    mobileMenu.classList.add('hidden');
+    menuIcon.className = 'fa-solid fa-bars text-2xl';
+  }
+});
+
+// ============================================
+// EVENT LISTENERS
+// ============================================
+
+document.getElementById('imccJoinForm').addEventListener('submit', handleFormSubmit);
+document.getElementById('directCreatorForm').addEventListener('submit', handleDirectCreatorUpload);
+document.getElementById('editCreatorForm').addEventListener('submit', handleEditCreatorSubmit);
+
+document.getElementById('confirmYesBtn').addEventListener('click', closeConfirmModal);
+document.getElementById('confirmNoBtn').addEventListener('click', closeConfirmModal);
+
+document.getElementById('tokenSubmitBtn').addEventListener('click', handleTokenSubmit);
+document.getElementById('tokenCancelBtn').addEventListener('click', hideTokenModal);
+
+document.getElementById('tokenInput').addEventListener('keypress', async (e) => {
+  if (e.key === 'Enter') {
+    await handleTokenSubmit();
+  }
+});
+
+document.getElementById('useUploadedUrlBtn').addEventListener('click', function() {
+  const uploadedUrl = document.getElementById('uploadedUrl').value;
+  if (uploadedUrl && targetInputId) {
+    const targetInput = document.getElementById(targetInputId);
+    if (targetInput) {
+      targetInput.value = uploadedUrl;
+      alertNotification('success', 'URL berhasil dimasukkan ke field!');
+    }
+  }
+  closeUploadModal();
+});
+
+document.getElementById('creatorSearchInput').addEventListener('input', filterCreators);
+
+window.addEventListener('hashchange', updateActivePage);
+window.addEventListener('load', () => {
+  updateActivePage();
+  resizeCanvas();
+  initParticles();
+  animateParticles();
+});
+
+window.addEventListener('resize', () => {
+  resizeCanvas();
+  initParticles();
+});
+
+// ============================================
+// GLOBAL FUNCTION EXPORTS
+// ============================================
+
+window.filterCreators = filterCreators;
+window.approveRegistration = approveRegistration;
+window.rejectRegistration = rejectRegistration;
+window.deleteCreator = deleteCreator;
+window.openEditModal = openEditModal;
+window.closeEditModal = closeEditModal;
+window.isAdmin = () => isAdmin;
+window.alertNotification = alertNotification;
+window.updateActivePage = updateActivePage;
+window.handleTokenSubmit = handleTokenSubmit;
+window.showTokenModal = showTokenModal;
+window.hideTokenModal = hideTokenModal;
