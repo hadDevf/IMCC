@@ -255,8 +255,9 @@ async function submitRegistration(formData) {
 
 /**
 * Upload image via Vercel API (API key tersembunyi di server)
+* FIXED: Renamed from uploadImage to uploadImageToServer to avoid conflict
 */
-async function uploadImage(file) {
+async function uploadImageToServer(file) {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -457,6 +458,9 @@ window.handleFileSelect = function(event) {
   uploadImage(file);
 };
 
+/**
+* Upload image function - FIXED: Now calls uploadImageToServer
+*/
 async function uploadImage(file) {
   const progressContainer = document.getElementById('uploadProgressContainer');
   const progressBar = document.getElementById('uploadProgressBar');
@@ -480,7 +484,8 @@ async function uploadImage(file) {
   uploadStatus.textContent = 'Mengupload...';
 
   try {
-    const result = await uploadImage(file);
+    // FIXED: Use uploadImageToServer instead of uploadImage (avoid recursion)
+    const result = await uploadImageToServer(file);
 
     clearInterval(progressInterval);
     progressBar.style.width = '100%';
