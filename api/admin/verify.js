@@ -20,7 +20,7 @@ export default async function handler(req, res) {
     } = req.body;
 
     // ⚠️ GANTI PASSWORDNYA SESUAI KEINGINAN KAMU!
-    const ADMIN_PASSWORD = '18db9sf83_armca7cbec7aecn801'; // Sama kayak di app.js
+    const ADMIN_PASSWORD = '18db9sf83_armca7cb9dh01bd801'; // Sama kayak di app.js
 
     if (password === ADMIN_PASSWORD) {
       return res.status(200).json({
