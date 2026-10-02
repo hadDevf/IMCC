@@ -1,0 +1,186 @@
+{
+  "armc": {
+    "nama": "A.R.M.C",
+    "kepanjangan": "Alliance of Rising Minecraft Creators",
+    "deskripsi": [
+      "Di sini, para creator dan owner saluran bisa saling berbagi pengalaman, tips, serta update seputar addon Minecraft. Komunitas ini menjadi wadah kolaborasi, diskusi, dan support satu sama lain agar saluran masing-masing bisa berkembang dengan sehat dan aktif.",
+      "Tidak hanya sekadar promosi, tapi juga membangun koneksi, menjaga kualitas konten, serta menjaga suasana komunitas yang saling menghargai. Wajib punya saluran atau tiktok aktif yang membagikan addon sebagai syarat utama bergabung."
+    ],
+    "sejak": "5 Juli 2026",
+    "logo": "/foto_profile/armc.png"
+  },
+  "arcon": {
+    "nama": "A.R.C.O.N",
+    "kepanjangan": "Alliance of Rising Creators Official Network",
+    "deskripsi": [
+      "A.R.C.O.N adalah sebuah aliansi eksklusif yang dibentuk sebagai wadah berkumpulnya para Rising Creators, khususnya para Owner Saluran WhatsApp bertema Minecraft yang memiliki visi dan misi yang sama untuk tumbuh dan berkembang bersama di dalam ekosistem digital.",
+      "Komunitas ini hadir bukan hanya sebagai grup chat biasa, melainkan sebagai sebuah Official Network yang solid untuk membangun relasi persahabatan yang kuat antar owner, menjadi pusat pertukaran informasi tercepat seputar update terbaru Minecraft, membahas strategi konten yang efektif, menganalisis tren yang sedang naik, serta menjadi tempat kolaborasi dalam berbagai project besar."
+    ],
+    "sejak": "20 Juli 2025",
+    "logo": "/foto_profile/arcon.jpg"
+  },
+  "imcc": {
+    "nama": "I.M.C.C",
+    "kepanjangan": "Indonesian Minecraft Creator Community",
+    "deskripsi": [
+      "I.M.C.C atau yang dikenal sebagai Indonesian Minecraft Creator Community adalah komunitas yang dibuat untuk menyatukan para konten kreator Minecraft di Indonesia, baik yang masih kecil maupun yang sudah besar. Grup ini menjadi rumah bagi semua kreator tanpa membedakan jumlah subscriber atau followers.",
+      "Fungsi utama dari grup ini adalah sebagai wadah untuk saling berbagi pengalaman, tips, dan informasi terbaru seputar dunia Minecraft. Mulai dari cara membuat konten yang menarik, update addon & marketplace, sampai algoritma platform, semua bisa dibahas bersama di sini.",
+      "Lebih dari sekadar grup sharing, I.M.C.C bertujuan membangun koneksi yang solid antar kreator agar bisa saling support dan berkembang bersama. Dengan adanya komunitas ini, diharapkan kreator Minecraft Indonesia bisa semakin kompak, kreatif, dan dikenal lebih luas."
+    ],
+    "sejak": "03 Maret 2026",
+    "logo": "/foto_profile/imcc.jpg"
+  },
+  "creators": [{
+    "nama": "Kynzo",
+    "role": "Founder A.R.M.C & Founder ARCON",
+    "bio": "Pendiri sekaligus arsitek utama di balik berdirinya komunitas A.R.M.C dan aliansi A.R.C.O.N. Berperan sebagai penggagas visi, penyusun struktur komunitas, serta penjaga arah perkembangan ekosistem kreator Minecraft Indonesia. Aktif membina anggota, membangun relasi antar owner saluran, dan memastikan komunitas tetap solid, sehat, dan terus bertumbuh.",
+    "foto": "/foto_profile/kynzo.jpg",
+    "sosmed": [{
+      "nama": "Saluran",
+      "url": "https://whatsapp.com/channel/0029VbDB8pLFnSz7tylNJv2L",
+      "icon": "whatsapp"
+    },
+      {
+        "nama": "Instagram",
+        "url": "https://www.instagram.com/had.hbr",
+        "icon": "instagram"
+      }]
+  },
+    {
+      "nama": "Blugedd MC",
+      "role": "Co-Founder A.R.M.C & Founder I.M.C.C",
+      "bio": "Pendamping utama Founder dalam membangun A.R.M.C, sekaligus pendiri komunitas I.M.C.C. Bertanggung jawab membantu mengoordinasikan kegiatan antar divisi, menyambung komunikasi antar anggota, serta mengembangkan I.M.C.C sebagai rumah bersama para kreator Minecraft Indonesia dari berbagai skala. Fokus pada kolaborasi, sharing ilmu, dan mempererat solidaritas antar kreator.",
+      "foto": "/foto_profile/blugedd.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029Vawi0fw7dmeQrfCGGf40",
+        "icon": "whatsapp"
+      },
+        {
+          "nama": "TikTok",
+          "url": "https://tiktok.com/@yt.blugedd",
+          "icon": "tiktok"
+        },
+        {
+          "nama": "Instagram",
+          "url": "https://www.instagram.com/blugeddv2",
+          "icon": "instagram"
+        },
+        {
+          "nama": "Discord",
+          "url": "https://discord.gg/6jYQSzZPSR",
+          "icon": "discord"
+        }]
+    },
+    {
+      "nama": "Fakhriz",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/fakhriz.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029Vb83LzW3GJP5cLjYPZ0y",
+        "icon": "whatsapp"
+      },
+        {
+          "nama": "TikTok",
+          "url": "https://www.tiktok.com/@fakhriz_mc01",
+          "icon": "tiktok"
+        },
+        {
+          "nama": "YouTube",
+          "url": "https://youtube.com/@si-rambut-merah",
+          "icon": "youtube"
+        },
+        {
+          "nama": "Instagram",
+          "url": "https://www.instagram.com/fakhriz_mc01",
+          "icon": "instagram"
+        }]
+    },
+    {
+      "nama": "MuReex MC",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/mureex.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029Vb8QY4wKrWQnGkk5Wl1t",
+        "icon": "whatsapp"
+      },
+        {
+          "nama": "TikTok",
+          "url": "https://www.tiktok.com/@mureex_mcshowcase?_r=1&_t=ZS-9ABwYXpxBg5",
+          "icon": "tiktok"
+        },
+        {
+          "nama": "YouTube",
+          "url": "https://youtube.com/@murexxgeming?si=KJKFzuEMz3YIJIG5",
+          "icon": "youtube"
+        }]
+    },
+    {
+      "nama": "Anna MC",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/anna.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029Vb85gCOJJhzdirTJPY2c",
+        "icon": "whatsapp"
+      },
+        {
+          "nama": "TikTok",
+          "url": "https://tiktok.com/@annnaamc",
+          "icon": "tiktok"
+        }]
+    },
+    {
+      "nama": "Rizsx MC",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/rizsx.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029VbDTPMQGOj9s8pOZhb2K",
+        "icon": "whatsapp"
+      }]
+    }],
+  "whitepapers": [{
+    "versi": "v0.1",
+    "judul": "Fondasi Komunitas A.R.M.C",
+    "tanggal": "5 Juli 2026",
+    "deskripsi": "Dokumen awal yang menjelaskan visi, misi, dan struktur dasar komunitas A.R.M.C sebagai wadah kolaborasi creator Minecraft Indonesia.",
+    "tag": "Foundation",
+    "url": "#",
+    "tipe": "pdf"
+  },
+    {
+      "versi": "v0.1",
+      "judul": "Fondasi Awal: Pendirian Owners Community",
+      "tanggal": "20 Juli 2025",
+      "deskripsi": "Dokumen pendirian awal yang menjelaskan latar belakang, visi, misi, serta fondasi keanggotaan Owners Community (OC) sebagai wadah resmi para pemilik Saluran WhatsApp bertema Minecraft di Indonesia.",
+      "tag": "Foundation",
+      "url": "/documents/OFFICIAL WHITEPAPER OC  - Document Version 0.1.pdf",
+      "tipe": "pdf"
+    },
+    {
+      "versi": "v1.0",
+      "judul": "Evolusi OC ke ARC: Rebranding Resmi Komunitas",
+      "tanggal": "17 Desember 2025",
+      "deskripsi": "Dokumen rebranding resmi yang memaparkan transisi OC menjadi Alliance of Rising Creators (ARC), mencakup alasan perubahan, filosofi nama baru, visi-misi yang diperbarui, serta arah tata kelola komunitas ke depan.",
+      "tag": "Expansion",
+      "url": "/documents/OFFICIAL WHITEPAPER FROM OC TO ARC - Document Version 1.0.pdf",
+      "tipe": "pdf"
+    },
+    {
+      "versi": "v2.0",
+      "judul": "ARCON - Evolution of ARC",
+      "tanggal": "27 September 2026",
+      "deskripsi": "Perubahan nama dan tujuan terhadap komunitas ARC",
+      "tag": "Expansion",
+      "url": "/documents/OFFICIAL WHITEPAPER TRANSITION FROM ARC TO ARCON - Document Version 2.0.pdf",
+      "tipe": "pdf"
+    }
+    ]
+}
