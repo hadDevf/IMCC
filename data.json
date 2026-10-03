@@ -49,8 +49,7 @@
         "nama": "TikTok",
         "url": "https://vm.tiktok.com/ZS9DkwBRaMgCY-5NUHf/",
         "icon": "tiktok"
-      }
-      ]
+      }]
   },
     {
       "nama": "Blugedd MC",
@@ -188,8 +187,7 @@
         "nama": "Saluran",
         "url": "https://whatsapp.com/channel/0029VazzvtQElagtxxt3Gh3G",
         "icon": "whatsapp"
-      }
-        ]
+      }]
     },
     {
       "nama": "Danzz",
@@ -200,8 +198,7 @@
         "nama": "Saluran",
         "url": "https://whatsapp.com/channel/0029VbCRJfA5fM5QXBWu3M1M",
         "icon": "whatsapp"
-      }
-        ]
+      }]
     },
     {
       "nama": "Gyuu",
@@ -212,17 +209,36 @@
         "nama": "Saluran",
         "url": "https://whatsapp.com/channel/0029Vb7LaNlCRs1wL6nozZ20",
         "icon": "whatsapp"
-      }
-        ]
-    }
-    ],
+      }]
+    },
+    {
+      "nama": "MinePack",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "https://minepacknode-five.vercel.app/.image/icon2-res.png",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029VbBJaB46RGJIkJ874X3d",
+        "icon": "whatsapp"
+      },
+        {
+          "nama": "TikTok",
+          "url": "https://tiktok.com/@minepack.id",
+          "icon": "tiktok"
+        },
+        {
+          "nama": "Website",
+          "url": "https://minepacknode-five.vercel.app",
+          "icon": "link"
+        }]
+    }],
   "whitepapers": [{
-    "versi": "v0.1",
+    "versi": "v1.0",
     "judul": "Fondasi Komunitas A.R.M.C",
     "tanggal": "5 Juli 2026",
     "deskripsi": "Dokumen awal yang menjelaskan visi, misi, dan struktur dasar komunitas A.R.M.C sebagai wadah kolaborasi creator Minecraft Indonesia.",
     "tag": "Foundation",
-    "url": "#",
+    "url": "/documents/WHITEPAPER PENDIRIAN ARMC - Document Version 1.0.pdf",
     "tipe": "pdf"
   },
     {
