@@ -293,9 +293,8 @@ main {
 .hero-logo {
   width: 160px;
   height: 160px;
-  border-radius: 50%;
+  border-radius: 30%;
   object-fit: cover;
-  border: 3px solid rgba(255,255,255,0.15);
   background: var(--bg-2);
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
 }
@@ -716,7 +715,6 @@ section.compact {
   height: 130px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid rgba(255,255,255,0.15);
   background: var(--bg-2);
 }
 .page-header h1 {

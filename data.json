@@ -42,7 +42,7 @@
     },
       {
         "nama": "Instagram",
-        "url": "https://www.instagram.com/had.hbr",
+        "url": "https://www.instagram.com/had.hbr?stkn=MWxtaXN6enZpbWU2OQ==",
         "icon": "instagram"
       }]
   },
@@ -145,7 +145,71 @@
         "url": "https://whatsapp.com/channel/0029VbDTPMQGOj9s8pOZhb2K",
         "icon": "whatsapp"
       }]
-    }],
+    },
+    {
+      "nama": "Sen MC",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/senmc.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029VbCNDCh1yT21nXqYTQ1J",
+        "icon": "whatsapp"
+      }]
+    },
+    {
+      "nama": "Sandika",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/sandika.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029Vb7bvWbFCCoMLzYNbg3N",
+        "icon": "whatsapp"
+      },
+        {
+          "nama": "Instagram",
+          "url": "https://www.instagram.com/sandikashareaddon?stkn=MWluOW96cmFrOGlvaA==",
+          "icon": "instagram"
+        }]
+    },
+    {
+      "nama": "Deni",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/deni.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029VazzvtQElagtxxt3Gh3G",
+        "icon": "whatsapp"
+      }
+        ]
+    },
+    {
+      "nama": "Danzz",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/danzz.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029VbCRJfA5fM5QXBWu3M1M",
+        "icon": "whatsapp"
+      }
+        ]
+    },
+    {
+      "nama": "Gyuu",
+      "role": "Member A.R.M.C",
+      "bio": "Content creator Minecraft yang aktif bikin konten addon review dan tutorial. Senang berkolaborasi dengan creator lain.",
+      "foto": "/foto_profile/craftxmods.jpg",
+      "sosmed": [{
+        "nama": "Saluran",
+        "url": "https://whatsapp.com/channel/0029Vb7LaNlCRs1wL6nozZ20",
+        "icon": "whatsapp"
+      }
+        ]
+    }
+    ],
   "whitepapers": [{
     "versi": "v0.1",
     "judul": "Fondasi Komunitas A.R.M.C",
@@ -181,6 +245,5 @@
       "tag": "Expansion",
       "url": "/documents/OFFICIAL WHITEPAPER TRANSITION FROM ARC TO ARCON - Document Version 2.0.pdf",
       "tipe": "pdf"
-    }
-    ]
+    }]
 }
