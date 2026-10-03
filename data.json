@@ -32,7 +32,7 @@
   },
   "creators": [{
     "nama": "Kynzo",
-    "role": "Founder A.R.M.C & Founder ARCON",
+    "role": "Founder A.R.M.C & Founder A.R.C.O.N",
     "bio": "Pendiri sekaligus arsitek utama di balik berdirinya komunitas A.R.M.C dan aliansi A.R.C.O.N. Berperan sebagai penggagas visi, penyusun struktur komunitas, serta penjaga arah perkembangan ekosistem kreator Minecraft Indonesia. Aktif membina anggota, membangun relasi antar owner saluran, dan memastikan komunitas tetap solid, sehat, dan terus bertumbuh.",
     "foto": "/foto_profile/kynzo.jpg",
     "sosmed": [{
@@ -44,7 +44,13 @@
         "nama": "Instagram",
         "url": "https://www.instagram.com/had.hbr?stkn=MWxtaXN6enZpbWU2OQ==",
         "icon": "instagram"
-      }]
+      },
+      {
+        "nama": "TikTok",
+        "url": "https://vm.tiktok.com/ZS9DkwBRaMgCY-5NUHf/",
+        "icon": "tiktok"
+      }
+      ]
   },
     {
       "nama": "Blugedd MC",

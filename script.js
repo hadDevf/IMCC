@@ -42,7 +42,6 @@ function renderHome() {
   const a = DATA.armc,
   ar = DATA.arcon,
   im = DATA.imcc;
-  const totalOwners = (im.owners || []).length;
   const totalCreators = (DATA.creators || []).length;
   const totalWp = (DATA.whitepapers || []).length;
 
@@ -102,10 +101,6 @@ function renderHome() {
   <div class="glass stat-card">
   <div class="stat-value">2</div>
   <div class="stat-label">Sub-Komunitas</div>
-  </div>
-  <div class="glass stat-card">
-  <div class="stat-value">${totalOwners}+</div>
-  <div class="stat-label">Owner Aktif</div>
   </div>
   <div class="glass stat-card">
   <div class="stat-value">${totalCreators}</div>
